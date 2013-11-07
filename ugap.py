@@ -417,8 +417,11 @@ def main(directory,error_corrector,processors,keep,coverage,proportion,temp_file
         os.makedirs('%s/UGAP_assembly_results' % start_path)
         os.makedirs('%s/work_directory' % start_path)
     except OSError, e:
-             if e.errno != errno.EEXIST:
-                 raise 
+        if e.errno != errno.EEXIST:raise 
+    try:
+        os.makedirs('%s/work_directory' % start_path)
+    except OSError, e:
+        if e.errno != errno.EEXIST:raise 
     dir_path=os.path.abspath("%s" % directory)
     os.system("ln -s %s/* %s/work_directory" % (dir_path, start_path))
     fileSets=read_file_sets("%s/work_directory" % start_path)
