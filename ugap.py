@@ -16,6 +16,14 @@ from Bio import SeqIO
 import errno
 import threading
 
+UGAP_PATH="/home/jsahl/UGAP"
+os.system("export UGAP_DIR=%s" % UGAP_PATH)
+os.system("export PYTHONPATH=$UGAP_DIR:$PYTHONPATH")
+os.system("export PATH=$UGAP_DIR/bin:$PATH")
+GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
+PICARD_PATH=UGAP_PATH+"/bin/CreateSequenceDictionary.jar"
+TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
+
 def test_dir(option, opt_str, value, parser):
     if os.path.exists(value):
         setattr(parser.values, option.dest, value)
@@ -277,11 +285,10 @@ def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_
     lock = threading.Lock()
     def _perform_workflow(data):
         idx, f = data
-	#length = get_sequence_length(f[0], idx)
         if int(get_sequence_length(f[0], idx))<=200:
-	    args=['java','-jar','/home/jsahl/bin/Trimmomatic-0.30/trimmomatic-0.30.jar','PE',
+	    args=['java','-jar','%s' % TRIM_PATH,'PE',
 	      '%s' % f[0], '%s' % f[1], '%s.F.paired.fastq.gz' % idx, 'F.unpaired.fastq.gz',
-	      '%s.R.paired.fastq.gz' % idx, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:/home/jsahl/illumina_adapters_all.fasta:2:30:10',
+	      '%s.R.paired.fastq.gz' % idx, 'R.unpaired.fastq.gz', '%s/bin/illumina_adapters_all.fasta:2:30:10' % UGAP_PATH,
 	      'MINLEN:80']
 	    try:
                 vcf_fh = open('%s.trimmomatic.out' % idx, 'w')
@@ -313,7 +320,7 @@ def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_
             else:
                 subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (idx,processors,idx,idx), shell=True)
         elif int(get_sequence_length(f[0], idx))>200:
-	    args=['java','-jar','/home/jsahl/bin/Trimmomatic-0.30/trimmomatic-0.30.jar','PE',
+	    args=['java','-jar','%s' % TRIM_PATH,'PE',
 	          '%s' % f[0], '%s' % f[1], '%s.F.paired.fastq.gz' % idx, 'F.unpaired.fastq.gz',
 	          '%s.R.paired.fastq.gz' % idx, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:/home/jsahl/illumina_adapters_all.fasta:2:30:10',
 	          'MINLEN:150']
@@ -350,27 +357,27 @@ def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_
 	os.system("zcat %s.F.paired.fastq.gz > %s_1.fastq" % (idx,idx))
         os.system("zcat %s.R.paired.fastq.gz > %s_2.fastq" % (idx,idx))
         os.system("mv %s_1.fastq %s_2.fastq %s.spades" % (idx,idx,idx))
-        os.chdir("%s.spades" % idx)
-	os.system("cp contigs.fasta %s.spades.assembly.fasta" % idx)
+        #os.chdir("%s.spades" % idx)
+	os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (idx,idx))
         filter_seqs("%s.spades.assembly.fasta" % idx, keep, idx)
         """remove redundancies - will likely change in the near future"""
-        os.system("/home/jsahl/tools/genometools-1.5.1/bin/gt sequniq -rev yes -o %s.%s.nr.spades.assembly.fasta %s.%s.spades.assembly.fasta" % (idx,keep,idx,keep))
+        os.system("gt sequniq -rev yes -o %s.%s.nr.spades.assembly.fasta %s.%s.spades.assembly.fasta" % (idx,keep,idx,keep))
+        lock.acquire()
         run_image("%s.%s.nr.spades.assembly.fasta" % (idx,keep), "%s" % idx, get_sequence_length(f[0], idx))
-        #kmer2=int(get_sequence_length(f[0], idx))-30
-        #kmer3=int(get_sequence_length(f[0], idx))-40
         os.system("restartIMAGE.pl %s2 %s 2 partitioned > out.image2.txt 2> /dev/null" % (idx,int(get_sequence_length(f[0], idx))-30))
         os.system("restartIMAGE.pl %s4 %s 2 partitioned > out.image3.txt 2> /dev/null" % (idx,int(get_sequence_length(f[0], idx))-40))
         os.system("cp %s6/new.fa ./%s.%s.image.fasta" % (idx,idx,keep))
+        lock.release()
         os.system("icorn.start.sh %s.%s.image.fasta 1 10 %s_1.fastq %s_2.fastq 200,400 300 > out.icorn.txt 2> /dev/null" % (idx,keep,idx,idx))
-        os.system("rm -rf *.gff")
+        #os.system("rm -rf *.gff")
 	clean_fasta("%s.%s.image.fasta.11" % (idx,keep),"%s_pagit.fasta" % idx)
         subprocess.check_call("bwa index %s_pagit.fasta > /dev/null 2>&1" % idx, shell=True)
         os.system("samtools faidx %s_pagit.fasta" % idx)
         run_bwa("%s_1.fastq" % idx, "%s_2.fastq" % idx, processors, idx,"%s_pagit.fasta" % idx)
         make_bam("%s.sam" % idx, idx)
         """need to define the GATK_PATH variable"""
-	os.system("java -jar /home/jsahl/tools/picard-tools-1.79/CreateSequenceDictionary.jar R=%s_pagit.fasta O=%s_pagit.dict > /dev/null 2>&1" % (idx, idx))
-        run_gatk("%s_pagit.fasta" % idx, processors, idx, "/home/jsahl/tools/GATK-2.4-9/GenomeAnalysisTK.jar")
+	os.system("java -jar %s R=%s_pagit.fasta O=%s_pagit.dict > /dev/null 2>&1" % (PICARD_PATH, idx, idx))
+        run_gatk("%s_pagit.fasta" % idx, processors, idx, "%s" % GATK_PATH)
         lock.acquire()
 	to_fix=parse_vcf("gatk.out", coverage, proportion)
         log_isg.logPrint("number of SNPs to fix in %s = %s" % (idx,len(to_fix)))
@@ -408,11 +415,14 @@ def main(directory,error_corrector,processors,keep,coverage,proportion,temp_file
     start_path = os.path.abspath("%s" % start_dir)
     try:
         os.makedirs('%s/UGAP_assembly_results' % start_path)
+        os.makedirs('%s/work_directory' % start_path)
     except OSError, e:
              if e.errno != errno.EEXIST:
                  raise 
     dir_path=os.path.abspath("%s" % directory)
-    fileSets=read_file_sets(dir_path)
+    os.system("ln -s %s %s/work_directory" % (dir_path, start_path))
+    fileSets=read_file_sets("%s/work_directory" % start_path)
+    os.chdir("%s/work_directory" % start_path)
     log_isg.logPrint("starting loop")
     run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_path)
     log_isg.logPrint("loop finished")
