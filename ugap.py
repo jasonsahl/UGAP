@@ -420,7 +420,7 @@ def main(directory,error_corrector,processors,keep,coverage,proportion,temp_file
              if e.errno != errno.EEXIST:
                  raise 
     dir_path=os.path.abspath("%s" % directory)
-    os.system("ln -s %s %s/work_directory" % (dir_path, start_path))
+    os.system("ln -s %s/* %s/work_directory" % (dir_path, start_path))
     fileSets=read_file_sets("%s/work_directory" % start_path)
     os.chdir("%s/work_directory" % start_path)
     log_isg.logPrint("starting loop")
