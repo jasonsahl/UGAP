@@ -4,13 +4,44 @@
 in conjunction with PBS"""
 
 from optparse import OptionParser
+import os
+
+def test_file(option, opt_str, value, parser):
+    try:
+        with open(value): setattr(parser.values, option.dest, value)
+    except IOError:
+        print '%s file cannot be opened' % option
+        sys.exit()
+
+def test_options(option, opt_str, value, parser):
+    if "hammer" in value:
+        setattr(parser.values, option.dest, value)
+    elif "musket" in value:
+        setattr(parser.values, option.dest, value)
+    elif "none" in value:
+        setattr(parser.values, option.dest, value)
+    else:
+        print "select from hammer, musket, or none"
+        sys.exit()
+
+def test_truths(option, opt_str, value, parser):
+    if "T" in value:
+        setattr(parser.values, option.dest, value)
+    elif "F" in value:
+        setattr(parser.values, option.dest, value)
+    else:
+        print "must select from T or F"
+        sys.exit()
 
 if __name__ == "__main__":
     usage="usage: %prog [options]"
     parser = OptionParser(usage=usage)
     parser.add_option("-f", "--forward", dest="forward_read",
-                      help="forward read, must be *.fastq.gz",
-                      action="callback", callback=test_files, type="string")
+                      help="forward read, must be *.fastq.gz [REQUIRED]",
+                      action="callback", callback=test_file, type="string")
+    parser.add_option("-r", "--reverse", dest="reverse_read",
+                      help="reverse read, must be *.fastq.gz [REQUIRED]",
+                      action="callback", callback=test_file, type="string")
     parser.add_option("-e", "--error", dest="error_corrector",
                       help="error corrector, choose from musket,hammer, or none, defaults to hammer",
                       action="callback", callback=test_options, type="string", default="hammer")
@@ -30,7 +61,7 @@ if __name__ == "__main__":
                       help="Keep reads that don't align to provided genome",
                       action="store", type="string", default="NULL")
     options, args = parser.parse_args()
-    mandatories = ["directory"]
+    mandatories = ["forward_read","reverse_read"]
     for m in mandatories:
         if not options.__dict__[m]:
             print "\nMust provide %s.\n" %m
