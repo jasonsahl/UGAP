@@ -7,7 +7,19 @@ import glob
 from igs.threading import functional as p_func
 import threading
 import decimal
+import re
+import sys
 
+"""UGAP_PATH must be modified for the install
+location on your machine"""
+UGAP_PATH="/Users/jsahl/UGAP"
+sys.path.append('%s' % UGAP_PATH)
+sys.path.append('%s/share' % UGAP_PATH)
+"""set the paths for all of the java dependencies"""
+GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
+PICARD_PATH=UGAP_PATH+"/bin/"
+TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
+PILON_PATH=UGAP_PATH+"/bin/pilon-1.5.jar"
 
 def get_readFile_components(full_file_path):
     (file_path,file_name) = os.path.split(full_file_path)
@@ -74,7 +86,7 @@ def read_file_sets(dir_path):
 
 
 def get_sequence_length(fastq_in, name):
-    os.system("zcat %s > %s.tmp.fastq" % (fastq_in,name))
+    os.system("gzip -dc %s > %s.tmp.fastq" % (fastq_in,name))
     lines = [ ]
     with open("%s.tmp.fastq" % name, "U") as f:
         for line in f.readlines()[1:2]:
@@ -243,7 +255,6 @@ def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_
 	else:
 	    pass
         if int(get_sequence_length(f[0], idx))<=200:
-            #effective_length = int(int(get_sequence_length(f[0, idx])/2))
 	    args=['java','-jar','%s' % TRIM_PATH,'PE', '-threads', '%s' % processors,
 	      '%s' % f[0], '%s' % f[1], '%s.F.paired.fastq.gz' % idx, 'F.unpaired.fastq.gz',
 	      '%s.R.paired.fastq.gz' % idx, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:2:30:10' % UGAP_PATH,
@@ -329,8 +340,8 @@ def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_
         else:
             pass
 	try:
-            os.system("zcat %s.F.paired.fastq.gz > %s_1.fastq" % (idx,idx))
-            os.system("zcat %s.R.paired.fastq.gz > %s_2.fastq" % (idx,idx))
+            os.system("gzip -dc %s.F.paired.fastq.gz > %s_1.fastq" % (idx,idx))
+            os.system("gzip -dc %s.R.paired.fastq.gz > %s_2.fastq" % (idx,idx))
 	    os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (idx,idx))
             filter_seqs("%s.spades.assembly.fasta" % idx, keep, idx)
             """remove redundancies - will likely change in the near future"""
