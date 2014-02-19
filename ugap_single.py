@@ -5,6 +5,25 @@ in conjunction with PBS"""
 
 from optparse import OptionParser
 import os
+import sys
+import subprocess
+try:
+    from ugap.util import get_sequence_length
+    from igs.utils import logging as log_isg
+except:
+    print "Environment not set correctly"
+    sys.exit()
+import errno
+from subprocess import Popen
+
+
+UGAP_PATH="/Users/jsahl/UGAP"
+sys.path.append('%s' % UGAP_PATH)
+sys.path.append('%s/share' % UGAP_PATH)
+GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
+PICARD_PATH=UGAP_PATH+"/bin/"
+TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
+PILON_PATH=UGAP_PATH+"/bin/pilon-1.5.jar"
 
 def test_file(option, opt_str, value, parser):
     try:
@@ -33,13 +52,143 @@ def test_truths(option, opt_str, value, parser):
         print "must select from T or F"
         sys.exit()
 
+def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce):
+    if "NULL" not in reduce:
+        try:
+            subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce, shell=True)
+        except:
+            print "problems with indexing input file"
+            sys.exit()
+        try:
+            run_bwa("%s" % forward_path, "%s" % reverse_path, processors, name,"%s" % reduce)
+            os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
+            os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > /dev/null 2>&1" % (name,name))
+            os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
+            os.system("cp %s_1.fastq.gz %s" % (name,forward_path))
+            os.system("cp %s_2.fastq.gz %s" % (name,reverse_path))
+        except:
+            print "problems depleting reads"
+            sys.exit()
+    else:
+        pass
+    if int(get_sequence_length(forward_path, name))<=200:
+        args=['java','-jar','%s' % TRIM_PATH,'PE', '-threads', '%s' % processors,
+              '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % name, 'F.unpaired.fastq.gz',
+	      '%s.R.paired.fastq.gz' % name, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:2:30:10' % UGAP_PATH,
+	      'MINLEN:%s' % (int(get_sequence_length(forward_path,name)/2))]
+        try:
+            vcf_fh = open('%s.trimmomatic.out' % name, 'w')
+        except:
+            log_isg.logPrint('could not open trimmomatic file')
+        try:
+            log_fh = open('%s.trimmomatic.log' % name, 'w')
+        except:
+            log_isg.logPrint('could not open log file')
+        try:
+            trim = Popen(args, stderr=vcf_fh, stdout=log_fh)
+            trim.wait()
+        except:
+            log_isg.logPrint("problem encountered with trimmomatic")
+        if error_corrector=="hammer":
+            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+        elif error_corrector=="musket":
+            ab = subprocess.call(['which', 'musket'])
+            if ab == 0:
+                pass
+            else:
+                print "musket isn't in your path, but needs to be!"
+                sys.exit()
+            subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
+            subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
+            subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
+            try:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            except:
+                pass
+        else:
+            try:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            except:
+                pass
+    elif int(get_sequence_length(forward_path, name))>200:
+        args=['java','-jar','%s' % TRIM_PATH,'PE',
+              '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % name, 'F.unpaired.fastq.gz',
+	      '%s.R.paired.fastq.gz' % name, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:2:30:10' % UGAP_PATH,
+	      'MINLEN:150']
+        try:
+            vcf_fh = open('%s.trimmomatic.out' % name, 'w')
+        except:
+            log_isg.logPrint('could not open trimmomatic file')
+        try:
+            log_fh = open('%s.trimmomatic.log' % name, 'w')
+        except:
+            log_isg.logPrint('could not open log file')
+        try:
+            trim = Popen(args, stderr=vcf_fh, stdout=log_fh)
+            trim.wait()
+        except:
+            log_isg.logPrint("problem encountered with trimmomatic")
+        """assemble sequences with spades"""
+        if error_corrector=="hammer":
+            try:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            except:
+                pass
+        elif error_corrector=="musket":
+            ab = subprocess.call(['which', 'musket'])
+            if ab == 0:
+                pass
+            else:
+                print "musket isn't in your path, but needs to be!"
+                sys.exit()
+            subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
+            subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
+            subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
+            try:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            except:
+                pass
+        else:
+            try:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            except:
+                pass
+
+
+def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce):
+    start_dir = os.getcwd()
+    start_path = os.path.abspath("%s" % start_dir)
+    forward_path = os.path.abspath("%s" % forward_read)
+    reverse_path = os.path.abspath("%s" % reverse_read)
+    try:
+        os.makedirs('%s/UGAP_assembly_results' % start_path)
+    except OSError, e:
+        if e.errno != errno.EEXIST:raise
+    try:
+        os.makedirs('%s/%s.work_directory' % (start_path,name))
+    except OSError, e:
+        if e.errno != errno.EEXIST:raise
+    if "NULL" != reduce:
+        reduce_path=os.path.abspath("%s" % reduce)
+    os.chdir("%s/%s.work_directory" % (start_path,name))
+    if "NULL" not in reduce:
+        run_single_loop(forward_path,reverse_path,name,error_corrector,2,keep,coverage,proportion,start_path,reduce_path)
+    else:
+	run_single_loop(forward_path,reverse_path,name,error_corrector,2,keep,coverage,proportion,start_path,reduce)
+    os.chdir("%s" % start_path)
+    if temp_files == "F":
+        os.system("rm -rf %s.work_directory" % name)
+
 if __name__ == "__main__":
     usage="usage: %prog [options]"
     parser = OptionParser(usage=usage)
     parser.add_option("-f", "--forward", dest="forward_read",
                       help="forward read, must be *.fastq.gz [REQUIRED]",
                       action="callback", callback=test_file, type="string")
-    parser.add_option("-r", "--reverse", dest="reverse_read",
+    parser.add_option("-n", "--name", dest="name",
+                      help="sample name [REQUIRED]",
+                      action="store", type="string")
+    parser.add_option("-v", "--reverse", dest="reverse_read",
                       help="reverse read, must be *.fastq.gz [REQUIRED]",
                       action="callback", callback=test_file, type="string")
     parser.add_option("-e", "--error", dest="error_corrector",
@@ -61,10 +210,12 @@ if __name__ == "__main__":
                       help="Keep reads that don't align to provided genome",
                       action="store", type="string", default="NULL")
     options, args = parser.parse_args()
-    mandatories = ["forward_read","reverse_read"]
+    mandatories = ["forward_read","name","reverse_read"]
     for m in mandatories:
         if not options.__dict__[m]:
             print "\nMust provide %s.\n" %m
             parser.print_help()
             exit(-1)
+    main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,options.coverage,
+         options.proportion,options.temp_files,options.reduce)
     

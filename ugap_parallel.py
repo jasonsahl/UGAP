@@ -67,10 +67,6 @@ def main(directory,error_corrector,processors,keep,coverage,proportion,temp_file
         os.makedirs('%s/work_directory' % start_path)
     except OSError, e:
         if e.errno != errno.EEXIST:raise 
-    try:
-        os.makedirs('%s/work_directory' % start_path)
-    except OSError, e:
-        if e.errno != errno.EEXIST:raise 
     dir_path=os.path.abspath("%s" % directory)
     if "NULL" != reduce:
         reduce_path=os.path.abspath("%s" % reduce)
