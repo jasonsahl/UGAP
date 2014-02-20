@@ -104,7 +104,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
         else:
             subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-    elif int(get_sequence_length(forward_path, name))>200:
+    if int(get_sequence_length(forward_path, name))>200:
         args=['java','-jar','%s' % TRIM_PATH,'PE',
               '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % name, 'F.unpaired.fastq.gz',
 	      '%s.R.paired.fastq.gz' % name, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:2:30:10' % UGAP_PATH,
@@ -138,55 +138,52 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
         else:
             subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-        try:
-            os.system("gzip -dc %s.F.paired.fastq.gz > %s_1.fastq" % (name,name))
-            os.system("gzip -dc %s.R.paired.fastq.gz > %s_2.fastq" % (name,name))
-        except:
-            print "problem Will Rogers!"
-	os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
-        filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
-        os.system("%s/bin/psi-cd-hit.pl -i %s.%s.spades.assembly.fasta -o %s.%s.nr.spades.assembly.fasta -c 0.99999999 -G 1 -g 1 -prog blastn -exec local -l 500" % (UGAP_PATH,name,keep,name,keep))
-	clean_fasta("%s.%s.nr.spades.assembly.fasta" % (name,keep),"%s_pagit.fasta" % name)
-        rename_multifasta("%s_pagit.fasta" % name, name, "%s_renamed.fasta" % name)
-        subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
-        os.system("samtools faidx %s_renamed.fasta" % name)
-        run_bwa("%s_1.fastq" % name, "%s_2.fastq" % name, processors, name,"%s_renamed.fasta" % name)
-        make_bam("%s.sam" % name, name)
-        os.system("java -jar %s/CreateSequenceDictionary.jar R=%s_renamed.fasta O=%s_renamed.dict > /dev/null 2>&1" % (PICARD_PATH, name, name))
-        run_gatk("%s_renamed.fasta" % name, processors, name, "%s" % GATK_PATH)
-        """run_bam_coverage stuff here"""
-        os.system("java -jar %s/AddOrReplaceReadGroups.jar INPUT=%s_renamed.bam OUTPUT=%s_renamed_header.bam SORT_ORDER=coordinate RGID=%s RGLB=%s RGPL=illumina RGSM=%s RGPU=name CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT > /dev/null 2>&1" % (PICARD_PATH,name,name,name,name,name))
-        os.system("echo %s_renamed_header.bam > %s.bam.list" % (name,name))
-        os.system("java -jar %s -R %s_renamed.fasta -T DepthOfCoverage -o %s_coverage -I %s.bam.list -rf BadCigar > /dev/null 2>&1" % (GATK_PATH,name,name,name))
-        process_coverage(name)
-        try:
-            to_fix=parse_vcf("%s.gatk.out" % name, coverage, proportion)
-            log_isg.logPrint("number of SNPs to fix in %s = %s" % (name,len(to_fix)))
-	    if int(len(to_fix))>=1:
-                try:
-                    fasta_to_tab("%s_renamed.fasta" % name, name)
-                    fix_assembly("%s.out.tab" % name, to_fix, name)
-                    os.system("cp %s_corrected_assembly.fasta %s_renamed.fasta" % (name,name))
-                except:
-                    print "error correction failed for some reason"
-            else:
-                pass
-        except:
-            pass
-        try:
-            os.system("java -jar %s --genome %s_renamed.fasta --frags %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,name,name,name))
-	    rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
-            os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s_final_assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name))
-	    filter_seqs("%s_final_assembly.fasta" % name, keep, name)
-            os.system("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep))
-            os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
-            os.system("cp coverage_out.txt %s/UGAP_assembly_results" % start_path)
+    os.system("gzip -dc %s.F.paired.fastq.gz > %s_1.fastq" % (name,name))
+    os.system("gzip -dc %s.R.paired.fastq.gz > %s_2.fastq" % (name,name))
+    os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
+    filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
+    os.system("%s/bin/psi-cd-hit.pl -i %s.%s.spades.assembly.fasta -o %s.%s.nr.spades.assembly.fasta -c 0.99999999 -G 1 -g 1 -prog blastn -exec local -l 500" % (UGAP_PATH,name,keep,name,keep))
+    clean_fasta("%s.%s.nr.spades.assembly.fasta" % (name,keep),"%s_pagit.fasta" % name)
+    rename_multifasta("%s_pagit.fasta" % name, name, "%s_renamed.fasta" % name)
+    subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
+    os.system("samtools faidx %s_renamed.fasta" % name)
+    run_bwa("%s_1.fastq" % name, "%s_2.fastq" % name, processors, name,"%s_renamed.fasta" % name)
+    make_bam("%s.sam" % name, name)
+    os.system("java -jar %s/CreateSequenceDictionary.jar R=%s_renamed.fasta O=%s_renamed.dict > /dev/null 2>&1" % (PICARD_PATH, name, name))
+    run_gatk("%s_renamed.fasta" % name, processors, name, "%s" % GATK_PATH)
+    """run_bam_coverage stuff here"""
+    os.system("java -jar %s/AddOrReplaceReadGroups.jar INPUT=%s_renamed.bam OUTPUT=%s_renamed_header.bam SORT_ORDER=coordinate RGID=%s RGLB=%s RGPL=illumina RGSM=%s RGPU=name CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT > /dev/null 2>&1" % (PICARD_PATH,name,name,name,name,name))
+    os.system("echo %s_renamed_header.bam > %s.bam.list" % (name,name))
+    os.system("java -jar %s -R %s_renamed.fasta -T DepthOfCoverage -o %s_coverage -I %s.bam.list -rf BadCigar > /dev/null 2>&1" % (GATK_PATH,name,name,name))
+    process_coverage(name)
+    try:
+        to_fix=parse_vcf("%s.gatk.out" % name, coverage, proportion)
+        log_isg.logPrint("number of SNPs to fix in %s = %s" % (name,len(to_fix)))
+	if int(len(to_fix))>=1:
             try:
-                os.system("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path))
+                fasta_to_tab("%s_renamed.fasta" % name, name)
+                fix_assembly("%s.out.tab" % name, to_fix, name)
+                os.system("cp %s_corrected_assembly.fasta %s_renamed.fasta" % (name,name))
             except:
-                pass
+                print "error correction failed for some reason"
+        else:
+            pass
+    except:
+        pass
+    try:
+        os.system("java -jar %s --genome %s_renamed.fasta --frags %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,name,name,name))
+	rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
+        os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s_final_assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name))
+	filter_seqs("%s_final_assembly.fasta" % name, keep, name)
+        os.system("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep))
+        os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
+        os.system("cp coverage_out.txt %s/UGAP_assembly_results" % start_path)
+        try:
+            os.system("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path))
         except:
             pass
+    except:
+        pass
 
 def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors):
     start_dir = os.getcwd()
