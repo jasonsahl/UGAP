@@ -29,7 +29,7 @@ def send_jobs(datasets):
         job_name = "UGAP_%s" % data[0]
         walltime = "48:00:00"
         processors = "nodes=1:ppn=8"
-        command = "python ugap_single.py -n %s -f %s -v %s -p 8" % (data[0],data[1],data[2])
+        command = "python /scratch/jsahl/tools/UGAP/ugap_single.py -n %s -f %s -v %s -p 8" % (data[0],data[1],data[2])
         memory = "mem=20000mb"
         job_string = """#!/bin/bash
         #PBS -N %s
