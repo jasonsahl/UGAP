@@ -153,8 +153,11 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
                 subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
             except:
                 pass
-        os.system("gzip -dc %s.F.paired.fastq.gz > %s_1.fastq" % (name,name))
-        os.system("gzip -dc %s.R.paired.fastq.gz > %s_2.fastq" % (name,name))
+        try:
+            os.system("gzip -dc %s.F.paired.fastq.gz > %s_1.fastq" % (name,name))
+            os.system("gzip -dc %s.R.paired.fastq.gz > %s_2.fastq" % (name,name))
+        except:
+            print "problem Will Rogers!"
 	os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
         filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
         os.system("%s/bin/psi-cd-hit.pl -i %s.%s.spades.assembly.fasta -o %s.%s.nr.spades.assembly.fasta -c 0.99999999 -G 1 -g 1 -prog blastn -exec local -l 500" % (UGAP_PATH,name,keep,name,keep))
