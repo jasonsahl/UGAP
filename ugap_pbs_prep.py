@@ -12,6 +12,7 @@ import os
 import logging
 from ugap.util import read_file_sets
 from ugap.util import get_readFile_components
+import sys
 
 def test_dir(option, opt_str, value, parser):
     if os.path.exists(value):
