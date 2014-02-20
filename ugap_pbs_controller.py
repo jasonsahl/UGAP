@@ -20,7 +20,7 @@ def parse_config_file(config_file):
     infile = open(config_file, "U")
     for line in infile:
         fields = line.split()
-        datasets=((fields[0],fields[1],fields[2]),)+datasets
+        datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9]),)+datasets
     return datasets
 
 def send_jobs(datasets):
@@ -29,7 +29,7 @@ def send_jobs(datasets):
         job_name = "UGAP_%s" % data[0]
         walltime = "48:00:00"
         processors = "nodes=1:ppn=8"
-        command = "python /scratch/jsahl/tools/UGAP/ugap_single.py -n %s -f %s -v %s -p 8" % (data[0],data[1],data[2])
+        command = "python /scratch/jsahl/tools/UGAP/ugap_single.py -n %s -f %s -v %s -e %s -k %s -c %s -i %s -t %s -r %s -p %s" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9])
         memory = "mem=20000mb"
         job_string = """#!/bin/bash
         #PBS -N %s

@@ -21,11 +21,31 @@ def test_dir(option, opt_str, value, parser):
         print "directory of fastqs cannot be found"
         sys.exit()
 
-def main(directory):
+def test_options(option, opt_str, value, parser):
+    if "hammer" in value:
+        setattr(parser.values, option.dest, value)
+    elif "musket" in value:
+        setattr(parser.values, option.dest, value)
+    elif "none" in value:
+        setattr(parser.values, option.dest, value)
+    else:
+        print "select from hammer, musket, or none"
+        sys.exit()
+
+def test_truths(option, opt_str, value, parser):
+    if "T" in value:
+        setattr(parser.values, option.dest, value)
+    elif "F" in value:
+        setattr(parser.values, option.dest, value)
+    else:
+        print "must select from T or F"
+        sys.exit()
+
+def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,processors):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
     for k,v in fileSets.iteritems():
-        print k+"\t"+'\t'.join(v)
+        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)
     
 if __name__ == "__main__":
     usage="usage: %prog [options]"
@@ -33,6 +53,27 @@ if __name__ == "__main__":
     parser.add_option("-d", "--directory", dest="directory",
                       help="directory to where .fastq.gz files are found [REQUIRED]",
                       action="callback", callback=test_dir, type="string")
+    parser.add_option("-e", "--error", dest="error_corrector",
+                      help="error corrector, choose from musket,hammer, or none, defaults to hammer",
+                      action="callback", callback=test_options, type="string", default="musket")
+    parser.add_option("-k", "--keep", dest="keep",
+                      help="minimum length of contigs to keep, defaults to 200",
+                      default="200", type="int")
+    parser.add_option("-c", "--coverage", dest="coverage",
+                      help="minimum coverage required for correcting SNPs, defaults to 3",
+                      default="3", type="int")
+    parser.add_option("-i", "--proportion", dest="proportion",
+                      help="minimum required proportion, defaults to 0.9",
+                      action="store", type="float", default="0.9")
+    parser.add_option("-t", "--temp_files", dest="temp_files",
+                      help="Keep temp files? Defaults to F",
+                      action="callback", callback=test_truths, type="string", default="F")
+    parser.add_option("-r", "--reduce", dest="reduce",
+                      help="Keep reads that don't align to provided genome",
+                      action="store", type="string", default="NULL")
+    parser.add_option("-p", "--processors", dest="processors",
+                      help="number of processors to apply to the assembly",
+                      action="store", type="int", default="4")
     options, args = parser.parse_args()
     
     mandatories = ["directory"]
@@ -42,4 +83,5 @@ if __name__ == "__main__":
             parser.print_help()
             exit(-1)
 
-    main(options.directory)
+    main(options.directory,options.error_corrector,options.keep,options.coverage,options.proportion,options.temp_files,
+         options.reduce,options.processors)
