@@ -217,6 +217,18 @@ def process_coverage(name):
     for k,v in coverage_dict.iteritems():
         print >> outfile,k,v+"\n",
                 
+rec=1
+
+def autoIncrement(): 
+    global rec 
+    pStart = 1  
+    pInterval = 1 
+    if (rec == 0):  
+        rec = pStart  
+    else:  
+        rec += pInterval  
+        return rec
+
 def fix_assembly(in_tab, to_fix, name):
     output_handle=open("%s_corrected_assembly.fasta" % name,"w")
     for line in open(in_tab, "U"):
