@@ -25,6 +25,18 @@ PICARD_PATH=UGAP_PATH+"/bin/"
 TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
 PILON_PATH=UGAP_PATH+"/bin/pilon-1.5.jar"
 
+rec=1
+
+def autoIncrement(): 
+    global rec 
+    pStart = 1  
+    pInterval = 1 
+    if (rec == 0):  
+        rec = pStart  
+    else:  
+        rec += pInterval  
+        return rec
+
 def test_file(option, opt_str, value, parser):
     try:
         with open(value): setattr(parser.values, option.dest, value)
