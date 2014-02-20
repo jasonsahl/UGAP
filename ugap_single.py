@@ -160,7 +160,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         os.system("%s/bin/psi-cd-hit.pl -i %s.%s.spades.assembly.fasta -o %s.%s.nr.spades.assembly.fasta -c 0.99999999 -G 1 -g 1 -prog blastn -exec local -l 500" % (UGAP_PATH,name,keep,name,keep))
 	clean_fasta("%s.%s.nr.spades.assembly.fasta" % (name,keep),"%s_pagit.fasta" % name)
         rename_multifasta("%s_pagit.fasta" % name, name, "%s_renamed.fasta" % name)
-        subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % idx, shell=True)
+        subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
         os.system("samtools faidx %s_renamed.fasta" % name)
         run_bwa("%s_1.fastq" % name, "%s_2.fastq" % name, processors, name,"%s_renamed.fasta" % name)
         make_bam("%s.sam" % name, name)
@@ -194,7 +194,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
             os.system("cp coverage_out.txt %s/UGAP_assembly_results" % start_path)
             try:
-                os.system("cp %s/*.* %s/UGAP_assembly_results" % (idx,start_path))
+                os.system("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path))
             except:
                 pass
         except:
@@ -238,7 +238,7 @@ if __name__ == "__main__":
                       action="callback", callback=test_file, type="string")
     parser.add_option("-e", "--error", dest="error_corrector",
                       help="error corrector, choose from musket,hammer, or none, defaults to hammer",
-                      action="callback", callback=test_options, type="string", default="musket")
+                      action="callback", callback=test_options, type="string", default="hammer")
     parser.add_option("-k", "--keep", dest="keep",
                       help="minimum length of contigs to keep, defaults to 200",
                       default="200", type="int")
