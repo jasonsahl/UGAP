@@ -17,7 +17,7 @@ import errno
 from subprocess import Popen
 
 
-UGAP_PATH="/Users/jsahl/UGAP"
+UGAP_PATH="/scratch/jsahl/tools/UGAP"
 sys.path.append('%s' % UGAP_PATH)
 sys.path.append('%s/share' % UGAP_PATH)
 GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
@@ -101,15 +101,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
             subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
             subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
-            try:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            except:
-                pass
+            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
         else:
-            try:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            except:
-                pass
+            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
     elif int(get_sequence_length(forward_path, name))>200:
         args=['java','-jar','%s' % TRIM_PATH,'PE',
               '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % name, 'F.unpaired.fastq.gz',
@@ -130,10 +124,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             log_isg.logPrint("problem encountered with trimmomatic")
         """assemble sequences with spades"""
         if error_corrector=="hammer":
-            try:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            except:
-                pass
+            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
         elif error_corrector=="musket":
             ab = subprocess.call(['which', 'musket'])
             if ab == 0:
@@ -144,15 +135,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
             subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
             subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
-            try:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            except:
-                pass
+            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
         else:
-            try:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            except:
-                pass
+            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
         try:
             os.system("gzip -dc %s.F.paired.fastq.gz > %s_1.fastq" % (name,name))
             os.system("gzip -dc %s.R.paired.fastq.gz > %s_2.fastq" % (name,name))
