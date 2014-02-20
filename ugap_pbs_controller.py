@@ -37,6 +37,7 @@ def send_jobs(datasets):
         #PBS -l %s
         #PBS -l %s
         #PBS -j oe
+        #PBS -m a
         cd $PBS_O_WORKDIR
         %s""" % (job_name, walltime, processors, memory, command)
 
