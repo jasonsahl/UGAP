@@ -189,7 +189,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
 	filter_seqs("%s_final_assembly.fasta" % name, keep, name)
         os.system("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep))
         os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
-        os.system("cp coverage_out.txt %s/UGAP_assembly_results" % start_path)
+        os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
         try:
             os.system("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path))
         except:
