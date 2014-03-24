@@ -23,7 +23,8 @@ sys.path.append('%s/share' % UGAP_PATH)
 GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
 PICARD_PATH=UGAP_PATH+"/bin/"
 TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
-PILON_PATH=UGAP_PATH+"/bin/pilon-1.5.jar"
+#changed to 1.7 on 3/24/14
+PILON_PATH=UGAP_PATH+"/bin/pilon-1.7.jar"
 
 rec=1
 

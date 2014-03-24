@@ -28,9 +28,9 @@ def send_jobs(datasets):
         output, input = popen2('qsub')
         job_name = "UGAP_%s" % data[0]
         walltime = "48:00:00"
-        processors = "nodes=1:ppn=8"
+        processors = "nodes=1:ppn=%s" % data[9]
         command = "python /scratch/jsahl/tools/UGAP/ugap_single.py -n %s -f %s -v %s -e %s -k %s -c %s -i %s -t %s -r %s -p %s" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9])
-        memory = "mem=20000mb"
+        memory = "mem=%s" % memory
         job_string = """#!/bin/bash
         #PBS -N %s
         #PBS -l walltime=%s
@@ -47,9 +47,9 @@ def send_jobs(datasets):
         print job_string
         print output.read()
  
-def main(config_file):
+def main(config_file,memory):
     datasets=parse_config_file(config_file)
-    send_jobs(datasets)
+    send_jobs(datasets,memory)
     
 if __name__ == "__main__":
     usage="usage: %prog [options]"
@@ -57,6 +57,9 @@ if __name__ == "__main__":
     parser.add_option("-c", "--config", dest="config_file",
                       help="config file that populates the UGAP single assembly",
                       action="callback", callback=test_file, type="string")
+    parser.add_option("-m", "--memory", dest="memory",
+                      help="amount of memory requested, defaults to 15G",
+                      action="callback", callback=test_file, type="15000mb")
     options, args = parser.parse_args()
     mandatories = ["config_file"]
     for m in mandatories:
@@ -64,4 +67,4 @@ if __name__ == "__main__":
             print "\nMust provide %s.\n" %m
             parser.print_help()
             exit(-1)
-    main(options.config_file)
+    main(options.config_file,options.memory)
