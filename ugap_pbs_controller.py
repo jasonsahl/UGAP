@@ -23,7 +23,7 @@ def parse_config_file(config_file):
         datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9]),)+datasets
     return datasets
 
-def send_jobs(datasets):
+def send_jobs(datasets,memory):
     for data in datasets:
         output, input = popen2('qsub')
         job_name = "UGAP_%s" % data[0]
@@ -39,6 +39,9 @@ def send_jobs(datasets):
         #PBS -j oe
         #PBS -m a
         cd $PBS_O_WORKDIR
+        module add blastall
+        module add musket
+        export PATH=/scratch/jsahl/tools/UGAP/bin:$PATH
         %s""" % (job_name, walltime, processors, memory, command)
 
         input.write(job_string)
@@ -59,7 +62,7 @@ if __name__ == "__main__":
                       action="callback", callback=test_file, type="string")
     parser.add_option("-m", "--memory", dest="memory",
                       help="amount of memory requested, defaults to 15G",
-                      action="callback", callback=test_file, type="15000mb")
+                      action="store", type="string", default="15000mb")
     options, args = parser.parse_args()
     mandatories = ["config_file"]
     for m in mandatories:
