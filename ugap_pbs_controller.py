@@ -23,7 +23,7 @@ def parse_config_file(config_file):
         datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9]),)+datasets
     return datasets
 
-def send_jobs(datasets,memory):
+def send_jobs(datasets,my_mem):
     for data in datasets:
         output, input = popen2('qsub')
         job_name = "UGAP_%s" % data[0]
@@ -49,10 +49,11 @@ def send_jobs(datasets,memory):
 
         print job_string
         print output.read()
- 
+         
 def main(config_file,memory):
     datasets=parse_config_file(config_file)
-    send_jobs(datasets,memory)
+    my_mem = memory
+    send_jobs(datasets,my_mem)
     
 if __name__ == "__main__":
     usage="usage: %prog [options]"
