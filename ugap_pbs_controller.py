@@ -30,7 +30,7 @@ def send_jobs(datasets,my_mem):
         walltime = "48:00:00"
         processors = "nodes=1:ppn=%s" % data[9]
         command = "python /scratch/jsahl/tools/UGAP/ugap_single.py -n %s -f %s -v %s -e %s -k %s -c %s -i %s -t %s -r %s -p %s" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9])
-        memory = "mem=%s" % memory
+        memory = "mem=%s" % my_mem
         job_string = """#!/bin/bash
         #PBS -N %s
         #PBS -l walltime=%s
