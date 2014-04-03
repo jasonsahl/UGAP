@@ -27,21 +27,14 @@ def send_jobs(datasets,my_mem):
     for data in datasets:
         output, input = popen2('sbatch')
         job_name = "UGAP_%s" % data[0]
-        processors = "nodes=1:ppn=%s" % data[9]
-        command = "python /scratch/jsahl/tools/UGAP/ugap_single.py -n %s -f %s -v %s -e %s -k %s -c %s -i %s -t %s -r %s -p %s" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9])
+        command = "python /home/js2829/tools/UGAP/ugap_single.py -n %s -f %s -v %s -e %s -k %s -c %s -i %s -t %s -r %s -p %s" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9])
         memory = "mem=%s" % my_mem
         job_string = """#!/bin/bash
         #SBATCH -p long
         #SBATCH -J %s
-        #PBS -l %s
-        #PBS -l %s
-        #PBS -j oe
-        #PBS -m a
-        cd $PBS_O_WORKDIR
-        module add blastall
-        module add musket
-        export PATH=/scratch/jsahl/tools/UGAP/bin:$PATH
-        %s""" % (job_name, processors, memory, command)
+        #SBATCH --cores-per-socket=%s
+        #SBATCH  --mem=%s
+        %s""" % (job_name, data[9], memory, command)
 
         input.write(job_string)
         input.close()
