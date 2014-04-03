@@ -29,8 +29,8 @@ def send_jobs(datasets,my_mem):
         job_name = "UGAP_%s" % data[0]
         command = "python /home/js2829/tools/UGAP/ugap_single.py -n %s -f %s -v %s -e %s -k %s -c %s -i %s -t %s -r %s -p %s" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9])
         memory = "mem=%s" % my_mem
-        job_string = """
-#!/bin/sh
+        job_string = \
+"""#!/bin/sh
 #SBATCH -p long
 #SBATCH -J %s
 #SBATCH --cores-per-socket=%s
