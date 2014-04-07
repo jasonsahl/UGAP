@@ -186,9 +186,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         pass
     try:
         os.system("java -jar %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,name,name,name))
-	    rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
+	rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
         os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s_final_assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name))
-	    filter_seqs("%s_final_assembly.fasta" % name, keep, name)
+	filter_seqs("%s_final_assembly.fasta" % name, keep, name)
         os.system("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep))
         os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
         os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
