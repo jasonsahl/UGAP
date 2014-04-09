@@ -33,7 +33,7 @@ def send_jobs(datasets,my_mem):
 """#!/bin/sh
 #SBATCH -p long
 #SBATCH -J %s
-#SBATCH --cores-per-socket=%s
+#SBATCH -c %s
 #SBATCH  --mem=%s
 %s""" % (job_name, data[9], my_mem, command)
 
