@@ -29,6 +29,7 @@ def send_jobs(datasets,my_mem):
         job_name = "UGAP_%s" % data[0]
         walltime = "48:00:00"
         memory_redux = my_mem.replace("G","")
+        print memory_redux
         if int(memory_redux)<48:
             my_q = "batch"
         else:
@@ -45,7 +46,7 @@ def send_jobs(datasets,my_mem):
         #PBS -m a
         #PBS -q %s
         cd $PBS_O_WORKDIR
-        module add blastall
+        module add blast/2.2.17
         module add musket
         export PATH=/scratch/jsahl/tools/UGAP/bin:$PATH
         %s""" % (job_name, walltime, processors, memory, my_q, command)
@@ -69,7 +70,7 @@ if __name__ == "__main__":
                       action="callback", callback=test_file, type="string")
     parser.add_option("-m", "--memory", dest="memory",
                       help="amount of memory requested, defaults to 15G",
-                      action="store", type="string", default="15000mb")
+                      action="store", type="string", default="15G")
     options, args = parser.parse_args()
     mandatories = ["config_file"]
     for m in mandatories:
