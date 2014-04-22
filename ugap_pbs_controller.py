@@ -49,6 +49,7 @@ def send_jobs(datasets,my_mem):
         module add blast/2.2.17
         module add musket
         export PATH=/scratch/jsahl/tools/UGAP/bin:$PATH
+        export PYTHONPATH=/scratch/jsahl/tools/UGAP:$PYTHONPATH
         %s""" % (job_name, walltime, processors, my_mem, my_q, command)
 
         input.write(job_string)
