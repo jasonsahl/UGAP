@@ -28,9 +28,9 @@ def send_jobs(datasets,my_mem):
         output, input = popen2('qsub')
         job_name = "UGAP_%s" % data[0]
         walltime = "48:00:00"
-        memory_redux = my_mem.replace("G","")
+        memory_redux = my_mem.replace("mb","")
         print memory_redux
-        if int(memory_redux)<48:
+        if int(memory_redux)<48000:
             my_q = "batch"
         else:
             my_q = "hmem"
@@ -70,7 +70,7 @@ if __name__ == "__main__":
                       action="callback", callback=test_file, type="string")
     parser.add_option("-m", "--memory", dest="memory",
                       help="amount of memory requested, defaults to 15G",
-                      action="store", type="string", default="15G")
+                      action="store", type="string", default="15000mb")
     options, args = parser.parse_args()
     mandatories = ["config_file"]
     for m in mandatories:
