@@ -30,7 +30,7 @@ def send_jobs(datasets,my_mem):
         walltime = "48:00:00"
         memory_redux = my_mem.replace("G","")
         print memory_redux
-        if int(memory_redux)<48000:
+        if int(memory_redux)<48:
             my_q = "batch"
         else:
             my_q = "hmem"
