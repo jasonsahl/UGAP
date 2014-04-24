@@ -48,6 +48,7 @@ def send_jobs(datasets,my_mem):
         cd $PBS_O_WORKDIR
         module add blast/2.2.17
         module add musket
+        module add python/2.7.3
         export PATH=/scratch/jsahl/tools/UGAP/bin:$PATH
         export PYTHONPATH=/scratch/jsahl/tools/UGAP:$PYTHONPATH
         %s""" % (job_name, walltime, processors, my_mem, my_q, command)
