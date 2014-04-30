@@ -17,7 +17,7 @@ import errno
 from subprocess import Popen
 
 
-UGAP_PATH="/scratch/jsahl/tools/UGAP"
+UGAP_PATH="/common/contrib/tools/UGAP"
 sys.path.append('%s' % UGAP_PATH)
 sys.path.append('%s/share' % UGAP_PATH)
 GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
