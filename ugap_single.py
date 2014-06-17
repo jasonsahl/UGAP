@@ -17,14 +17,15 @@ import errno
 from subprocess import Popen
 
 
-UGAP_PATH="/common/contrib/tools/UGAP"
+UGAP_PATH="/Users/jsahl/UGAP"
 sys.path.append('%s' % UGAP_PATH)
 sys.path.append('%s/share' % UGAP_PATH)
 GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
 PICARD_PATH=UGAP_PATH+"/bin/"
 TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
 #changed to 1.7 on 3/24/14
-PILON_PATH=UGAP_PATH+"/bin/pilon-1.7.jar"
+#changed to 1.8 on 6/17/14
+PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
 
 rec=1
 
@@ -37,6 +38,115 @@ def autoIncrement():
     else:  
         rec += pInterval  
         return rec
+
+def report_stats(results, bam, name, suffix):
+    infile = open(results, "rU")
+    outfile = open("%s_%s_breadth.txt" % (name, suffix), "w")
+    print >> outfile, name,"\n",
+    for line in infile:
+        fields = line.split()
+        chromosome = fields[0]
+        try:
+            amount = (int(fields[2])/int(fields[1]))*100
+            print >> outfile,chromosome,"\t",amount,"\n",
+        except:
+            print >> outfile, chromosome,"\t","0","\n",
+            sys.exc_clear()
+    infile.close()
+    outfile.close()
+
+def doc(coverage, genome_size, name, suffix):
+    incov = open(coverage, "U")
+    ingenom = open(genome_size, "U")
+    outfile = open("%s_%s_depth.txt" % (name, suffix), "w")
+    all = [ ]
+    my_dict = {}
+    for line in incov:
+        fields=line.split()
+        fields = map(lambda s: s.strip(), fields)
+        all.append(fields)
+    for x, y in all:
+        if int(y)>int(1):
+           try:
+                my_dict[x].append(y)
+           except KeyError:
+                my_dict[x] = [y]
+        else:
+           continue
+    new_dict={}
+    for k,v in my_dict.iteritems():
+        ints = map(int, v)
+        new_dict.update({k:sum(ints)})
+    genome_size_dict = {}
+    for line in ingenom:
+        fields = line.split()
+        genome_size_dict.update({fields[0]:fields[1]})
+    print >> outfile, name,"\n",
+    for k,v in new_dict.iteritems():
+        print >> outfile, k,"\t",round(int(v)/int(genome_size_dict.get(k)),0)
+    for y,z in genome_size_dict.iteritems():
+        if y not in new_dict:
+                print >> outfile, y,"\t","0"
+
+def sum_coverage(coverage,cov):
+    infile = open(coverage, "rU")
+    outfile = open("amount_covered.txt", "w")
+    all = [ ]
+    dict = {}
+    for line in infile:
+        fields=line.split()
+        fields = map(lambda s: s.strip(), fields)
+        all.append(fields)
+    for x, y in all:
+        if int(y)>int(cov):
+           try:
+               dict[x].append(y)
+           except KeyError:
+               dict[x] = [y]
+        else:
+               pass
+    for k,v in dict.iteritems():
+        print >> outfile, k, len(v)
+    infile.close()
+    outfile.close()
+
+def merge_files_by_column(column, file_1, file_2, out_file):
+    """Takes 2 file and merge their columns based on the column. It is assumed
+    that line ordering in the files do not match, so we read both files into memory
+    and join them"""
+    join_map = {}
+    for line in open(file_1):
+        row = line.split()
+        column_value = row.pop(column)
+        join_map[column_value] = row
+
+    for line in open(file_2):
+        row = line.split()
+        column_value = row.pop(column)
+        if column_value in join_map:
+            join_map[column_value].extend(row)
+
+    fout = open(out_file, 'w')
+    for k, v in join_map.iteritems():
+        fout.write('\t'.join([k] + v) + '\n')
+    fout.close()
+
+def get_coverage(bam,size):
+    """does the actual work"""
+    subprocess.check_call("genomeCoverageBed -d -ibam %s -g %s > tmp.out" % (bam,size), shell=True)
+
+def remove_column(temp_file):
+    infile = open(temp_file, "rU")
+    outfile = open("coverage.out", "w")
+    my_fields = [ ]
+    for line in infile:
+        fields=line.split()
+        del fields[1]
+        my_fields.append(fields)
+    for x in my_fields:
+        print >> outfile, "\t".join(x)
+    infile.close()
+    outfile.close()
 
 def test_file(option, opt_str, value, parser):
     try:
@@ -64,6 +174,17 @@ def test_truths(option, opt_str, value, parser):
     else:
         print "must select from T or F"
         sys.exit()
+
+def get_seq_length(ref):
+    """uses BioPython in order to calculated the length of
+    each fasta entry in the reference fasta"""
+    infile = open(ref, "rU")
+    outfile = open("tmp.txt", "w")
+    for record in SeqIO.parse(infile, "fasta"):
+        print >> outfile,record.id,len(record.seq)
+    infile.close()
+    outfile.close()
+
 
 def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce):
     if "NULL" not in reduce:
@@ -192,9 +313,20 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         os.system("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep))
         os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
         os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
+        """new code starts here"""
+        get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep))
+        subprocess.check_call("tr ' ' '\t' < tmp.txt > genome_size.txt", shell=True)
+        get_coverage("%s_renamed_header.bam" % name,"genome_size.txt")
+        remove_column("tmp.out")
+        sum_coverage("coverage.out",coverage)
+        merge_files_by_column(0,"genome_size.txt", "amount_covered.txt", "results.txt")
+        report_stats("results.txt", bam, name, coverage)
+        doc("coverage.out", "genome_size.txt", name, coverage)
+        """new code ends here"""
         try:
             os.system("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path))
         except:
+            print "tried to copy prokka files, but prokka doesn't appear to be installed"
             pass
     except:
         pass
@@ -214,6 +346,25 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
         if e.errno != errno.EEXIST:raise
     if "NULL" != reduce:
         reduce_path=os.path.abspath("%s" % reduce)
+    """test for dependencies"""
+    if error_corrector=="musket":
+        ab = subprocess.call(['which', 'musket'])
+        if ab == 0:
+            pass
+        else:
+            print "musket isn't in your path, but needs to be!"
+            sys.exit()
+    else:
+        pass
+    dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
+    for dependency in dependencies:
+        ra = subprocess.call(['which', '%s' % dependency])
+        if ra == 0:
+            pass
+        else:
+            print "%s is not in your path, but needs to be!" % dependency
+        sys.exit()
+    """done checking for dependencies"""
     os.chdir("%s/%s.work_directory" % (start_path,name))
     if "NULL" not in reduce:
         run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path)
