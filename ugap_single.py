@@ -331,7 +331,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     except:
         pass
 
-def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors):
+def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful):
     start_dir = os.getcwd()
     start_path = os.path.abspath("%s" % start_dir)
     forward_path = os.path.abspath("%s" % forward_read)
@@ -407,6 +407,9 @@ if __name__ == "__main__":
     parser.add_option("-p", "--processors", dest="processors",
                       help="number of processors to apply to the assembly",
                       action="store", type="int", default="4")
+    parser.add_option("-x", "--careful", dest="careful",
+                      help="use careful option in spades? Defaults to T",
+                      action="callback", callback=test_truths, type="string", default="T")
     options, args = parser.parse_args()
     mandatories = ["forward_read","name","reverse_read"]
     for m in mandatories:
@@ -415,5 +418,5 @@ if __name__ == "__main__":
             parser.print_help()
             exit(-1)
     main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,options.coverage,
-         options.proportion,options.temp_files,options.reduce,options.processors)
+         options.proportion,options.temp_files,options.reduce,options.processors,options.careful)
     
