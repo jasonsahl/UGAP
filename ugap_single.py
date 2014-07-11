@@ -363,7 +363,7 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
             pass
         else:
             print "%s is not in your path, but needs to be!" % dependency
-        sys.exit()
+            sys.exit()
     """done checking for dependencies"""
     os.chdir("%s/%s.work_directory" % (start_path,name))
     if "NULL" not in reduce:
