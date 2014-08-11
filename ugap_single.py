@@ -39,9 +39,9 @@ def autoIncrement():
         rec += pInterval  
         return rec
 
-def report_stats(results, bam, name, suffix):
+def report_stats(results, bam, name):
     infile = open(results, "rU")
-    outfile = open("%s_%s_breadth.txt" % (name, suffix), "w")
+    outfile = open("%s_breadth.txt" % name, "w")
     print >> outfile, name,"\n",
     for line in infile:
         fields = line.split()
@@ -106,7 +106,7 @@ def sum_coverage(coverage,cov):
         else:
                pass
     for k,v in dict.iteritems():
-        print >> outfile, k, len(v)
+        print >> outfile, k+"\t"+str(len(v))
     infile.close()
     outfile.close()
 
@@ -116,16 +116,16 @@ def merge_files_by_column(column, file_1, file_2, out_file):
     and join them"""
     join_map = {}
     for line in open(file_1):
+        line.strip()
         row = line.split()
         column_value = row.pop(column)
         join_map[column_value] = row
-
     for line in open(file_2):
+        line.strip()
         row = line.split()
         column_value = row.pop(column)
         if column_value in join_map:
             join_map[column_value].extend(row)
-
     fout = open(out_file, 'w')
     for k, v in join_map.iteritems():
         fout.write('\t'.join([k] + v) + '\n')
@@ -186,7 +186,7 @@ def get_seq_length(ref):
     outfile.close()
 
 
-def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce):
+def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful):
     if "NULL" not in reduce:
         try:
             subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce, shell=True)
@@ -224,7 +224,10 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         except:
             log_isg.logPrint("problem encountered with trimmomatic")
         if error_corrector=="hammer":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
         elif error_corrector=="musket":
             ab = subprocess.call(['which', 'musket'])
             if ab == 0:
@@ -235,9 +238,15 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
             subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
             subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
-            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
         else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
     if int(get_sequence_length(forward_path, name))>200:
         args=['java','-jar','%s' % TRIM_PATH,'PE',
               '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % name, 'F.unpaired.fastq.gz',
@@ -258,7 +267,10 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             log_isg.logPrint("problem encountered with trimmomatic")
         """assemble sequences with spades"""
         if error_corrector=="hammer":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
         elif error_corrector=="musket":
             ab = subprocess.call(['which', 'musket'])
             if ab == 0:
@@ -269,9 +281,15 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
             subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
             subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
-            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler -1 %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
         else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
     os.system("gzip -dc %s.F.paired.fastq.gz > %s_1.fastq" % (name,name))
     os.system("gzip -dc %s.R.paired.fastq.gz > %s_2.fastq" % (name,name))
     os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
@@ -310,17 +328,23 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
 	rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
         os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s_final_assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name))
 	filter_seqs("%s_final_assembly.fasta" % name, keep, name)
-        os.system("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep))
+        try:
+            os.system("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep))
+        except:
+            print "problem fixing missing space"
+            pass
         os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
         os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
         """new code starts here"""
+        run_bwa("%s_1.fastq" % name, "%s_2.fastq" % name, processors, name,"%s.%s.spades.assembly.fasta" % name)
+        make_bam("%s.sam" % name, name)
         get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep))
         subprocess.check_call("tr ' ' '\t' < tmp.txt > genome_size.txt", shell=True)
-        get_coverage("%s_renamed_header.bam" % name,"genome_size.txt")
+        get_coverage("%s_renamed.bam" % name,"genome_size.txt")
         remove_column("tmp.out")
         sum_coverage("coverage.out",coverage)
         merge_files_by_column(0,"genome_size.txt", "amount_covered.txt", "results.txt")
-        report_stats("results.txt", bam, name, coverage)
+        report_stats("results.txt", "%s_renamed_header.bam" % name, name)
         doc("coverage.out", "genome_size.txt", name, coverage)
         """new code ends here"""
         try:
@@ -363,13 +387,13 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
             pass
         else:
             print "%s is not in your path, but needs to be!" % dependency
-        sys.exit()
+            sys.exit()
     """done checking for dependencies"""
     os.chdir("%s/%s.work_directory" % (start_path,name))
     if "NULL" not in reduce:
-        run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path)
+        run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful)
     else:
-	run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce)
+	run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful)
     os.chdir("%s" % start_path)
     if temp_files == "F":
         os.system("rm -rf %s.work_directory" % name)

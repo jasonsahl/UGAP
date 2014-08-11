@@ -87,13 +87,19 @@ def read_file_sets(dir_path):
 
 def get_sequence_length(fastq_in, name):
     os.system("gzip -dc %s > %s.tmp.fastq" % (fastq_in,name))
+    #try:
+    #    os.system("zcat %s | head | split -l 4" % fastq_in)
+    #except:
+    #os.system("gzcat %s | head | split -l 4 > /dev/null 2>&" % fastq_in)
     lines = [ ]
     with open("%s.tmp.fastq" % name, "U") as f:
+    #with open("xaa", "U") as f:
         for line in f.readlines()[1:2]:
             for x in line:
                 lines.append(x)
     length=len(lines)
     os.system("rm -rf %s.tmp.fastq" % name)
+    #os.system("rm xa*")
     return length
 
 def clean_fasta(fasta_in, fasta_out):
@@ -142,7 +148,7 @@ def run_bwa(read_1, read_2, processors, name, reference):
     bwa(reference,read_1,read_2,"%s.sam" % name,processors,log_file='sam.log',**{'-R':read_group})
 
 def make_bam(in_sam, name):
-    subprocess.check_call("samtools view -h -b -S %s -o %s.1.bam 2> /dev/null" % (in_sam, name), shell=True)
+    subprocess.check_call("samtools view -h -b -S %s > %s.1.bam 2> /dev/null" % (in_sam, name), shell=True)
     subprocess.check_call("samtools view -u -h -F4 -o %s.2.bam %s.1.bam" % (name,name), shell=True)
     subprocess.check_call("samtools view -h -b -q1 -F4 -o %s.3.bam %s.2.bam" % (name,name), shell=True)
     subprocess.check_call("samtools sort %s.3.bam %s_renamed" % (name,name), shell=True)
@@ -401,6 +407,7 @@ def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_
             try:
                 os.system("cp %s/*.* %s/UGAP_assembly_results" % (idx,start_path))
             except:
+                print "prokka not installed and annotation files were not copied over!"
                 pass
         except:
             pass
