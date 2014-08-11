@@ -333,28 +333,34 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         except:
             print "problem fixing missing space"
             pass
-        os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
+        try:
+            os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
+        except:
+            print "tried to clean fasta, but cleanfasta not configured correctly, copying unclean fasta"
+            os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
         os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
         """new code starts here"""
-        run_bwa("%s_1.fastq" % name, "%s_2.fastq" % name, processors, name,"%s.%s.spades.assembly.fasta" % name)
-        make_bam("%s.sam" % name, name)
-        get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep))
-        subprocess.check_call("tr ' ' '\t' < tmp.txt > genome_size.txt", shell=True)
-        get_coverage("%s_renamed.bam" % name,"genome_size.txt")
-        remove_column("tmp.out")
-        sum_coverage("coverage.out",coverage)
-        merge_files_by_column(0,"genome_size.txt", "amount_covered.txt", "results.txt")
-        report_stats("results.txt", "%s_renamed_header.bam" % name, name)
-        doc("coverage.out", "genome_size.txt", name, coverage)
-        """new code ends here"""
-        try:
-            os.system("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path))
-        except:
-            print "tried to copy prokka files, but prokka doesn't appear to be installed"
-            pass
     except:
         pass
-
+    os.system("bwa index %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,keep))
+    run_bwa("%s_1.fastq" % name, "%s_2.fastq" % name, processors, name,"%s.%s.spades.assembly.fasta" % (name,keep))
+    make_bam("%s.sam" % name, name)
+    get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep))
+    subprocess.check_call("tr ' ' '\t' < tmp.txt > genome_size.txt", shell=True)
+    get_coverage("%s_renamed.bam" % name,"genome_size.txt")
+    remove_column("tmp.out")
+    sum_coverage("coverage.out",coverage)
+    merge_files_by_column(0,"genome_size.txt", "amount_covered.txt", "results.txt")
+    report_stats("results.txt", "%s_renamed_header.bam" % name, name)
+    doc("coverage.out", "genome_size.txt", name, coverage)
+    os.system("cp %s_%s_depth.txt %s/UGAP_assembly_results" % (name,coverage,start_path))
+    """new code ends here"""
+    try:
+        os.system("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path))
+    except:
+        print "tried to copy prokka files, but prokka doesn't appear to be installed"
+        pass
+    
 def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful):
     start_dir = os.getcwd()
     start_path = os.path.abspath("%s" % start_dir)

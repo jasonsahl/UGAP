@@ -41,11 +41,11 @@ def test_truths(option, opt_str, value, parser):
         print "must select from T or F"
         sys.exit()
 
-def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,processors):
+def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
     for k,v in fileSets.iteritems():
-        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)
+        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)
     
 if __name__ == "__main__":
     usage="usage: %prog [options]"
@@ -74,6 +74,9 @@ if __name__ == "__main__":
     parser.add_option("-p", "--processors", dest="processors",
                       help="number of processors to apply to the assembly",
                       action="store", type="int", default="4")
+     parser.add_option("-x", "--careful", dest="careful",
+                      help="use careful option in spades? Defaults to T",
+                      action="callback", callback=test_truths, type="string", default="T")
     options, args = parser.parse_args()
     
     mandatories = ["directory"]
@@ -84,4 +87,4 @@ if __name__ == "__main__":
             exit(-1)
 
     main(options.directory,options.error_corrector,options.keep,options.coverage,options.proportion,options.temp_files,
-         options.reduce,options.processors)
+         options.reduce,options.processors,options.careful)
