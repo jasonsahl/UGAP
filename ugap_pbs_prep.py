@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parser.add_option("-p", "--processors", dest="processors",
                       help="number of processors to apply to the assembly",
                       action="store", type="int", default="4")
-     parser.add_option("-x", "--careful", dest="careful",
+    parser.add_option("-x", "--careful", dest="careful",
                       help="use careful option in spades? Defaults to T",
                       action="callback", callback=test_truths, type="string", default="T")
     options, args = parser.parse_args()
