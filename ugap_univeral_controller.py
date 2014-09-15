@@ -58,6 +58,7 @@ def send_jobs(datasets,my_mem,controller,queue):
             print output.read()
         elif controller == "torque":
             memory = "mem=%s" % my_mem
+            processors = "nodes=1:ppn=%s" % data[9]
             job_string = """#!/bin/bash
 #PBS -N %s
 #PBS -l walltime=%s
