@@ -37,7 +37,10 @@ def parse_config_file(config_file):
 
 def send_jobs(datasets,my_mem,controller,queue):
     for data in datasets:
-        output, input = popen2('sbatch')
+        if controller == "sbatch":
+            output, input = popen2('sbatch')
+        else:
+            output, input = popen2('qsub')
         job_name = "UGAP_%s" % data[0]
         walltime = "48:00:00"
         command = "python /common/contrib/tools/UGAP/ugap_single.py -n %s -f %s -v %s -e %s -k %s -c %s -i %s -t %s -r %s -p %s -x %s" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10])
