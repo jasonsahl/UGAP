@@ -11,7 +11,7 @@ try:
     from ugap.util import *
     from igs.utils import logging as log_isg
 except:
-    print "Environment not set correctly"
+    print "Environment not set correctly, correct ugap_single.py environment"
     sys.exit()
 import errno
 from subprocess import Popen
@@ -134,6 +134,15 @@ def merge_files_by_column(column, file_1, file_2, out_file):
 def get_coverage(bam,size):
     """does the actual work"""
     subprocess.check_call("genomeCoverageBed -d -ibam %s -g %s > tmp.out" % (bam,size), shell=True)
+
+def slice_asesmbly(in_fasta, size, out_fasta):
+    input = open(in_fasta, "U")
+    outfile = open(out_fasta, "w")
+    for record in SeqIO.parse(input, "fasta"):
+        print >> outfile, ">"+record.id+"\n",
+        print >> outfile, record.seq[0:size]
+    input.close()
+    outfile.close()
 
 def remove_column(temp_file):
     infile = open(temp_file, "rU")
@@ -355,8 +364,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     doc("coverage.out", "genome_size.txt", name, coverage)
     os.system("cp %s_%s_depth.txt %s/UGAP_assembly_results" % (name,coverage,start_path))
     """new code ends here"""
+    slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     try:
-        os.system("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path))
+        subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
         print "tried to copy prokka files, but prokka doesn't appear to be installed"
         pass
