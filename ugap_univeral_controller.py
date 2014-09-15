@@ -39,6 +39,7 @@ def send_jobs(datasets,my_mem,controller,queue):
     for data in datasets:
         output, input = popen2('sbatch')
         job_name = "UGAP_%s" % data[0]
+        walltime = "48:00:00"
         command = "python /common/contrib/tools/UGAP/ugap_single.py -n %s -f %s -v %s -e %s -k %s -c %s -i %s -t %s -r %s -p %s -x %s" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10])
         if controller == "slurm":
             memory = "mem=%s" % my_mem
@@ -104,7 +105,7 @@ if __name__ == "__main__":
                       action="store", type="string", default="15000mb")
     parser.add_option("-o", "--controller", dest="controller",
                       help="system to use: choose from slurm, torque [default], or sge",
-                      action="callback", callback=test_options, type="string")
+                      action="callback", callback=test_options, type="string", default="torque")
     parser.add_option("-q", "--queue", dest="queue",
                       help="which queue to use?",
                       action="store", type="string")
