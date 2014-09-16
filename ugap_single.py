@@ -17,7 +17,7 @@ import errno
 from subprocess import Popen
 
 
-UGAP_PATH="/Users/jsahl/UGAP"
+#UGAP_PATH="/Users/jsahl/UGAP"
 sys.path.append('%s' % UGAP_PATH)
 sys.path.append('%s/share' % UGAP_PATH)
 GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
@@ -28,6 +28,13 @@ TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
 PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
 
 rec=1
+
+def test_dir(option, opt_str, value, parser):
+    if os.path.exists(value):
+        setattr(parser.values, option.dest, value)
+    else:
+        print "directory of fastas cannot be found"
+        sys.exit()
 
 def autoIncrement(): 
     global rec 
@@ -371,7 +378,13 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         print "tried to copy prokka files, but prokka doesn't appear to be installed"
         pass
     
-def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful):
+def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,ugap_path):
+    UGAP_PATH=ugap_path
+    if os.path.exists(WGFAST_PATH):
+        sys.path.append("%s" % WGFAST_PATH)
+    else:
+        print "your UGAP path is not correct.  Edit the path in ugap_pbs_prep.py and try again"
+        sys.exit()
     start_dir = os.getcwd()
     start_path = os.path.abspath("%s" % start_dir)
     forward_path = os.path.abspath("%s" % forward_read)
@@ -450,13 +463,16 @@ if __name__ == "__main__":
     parser.add_option("-x", "--careful", dest="careful",
                       help="use careful option in spades? Defaults to T",
                       action="callback", callback=test_truths, type="string", default="T")
+    parser.add_option("-z", "--ugap_path", dest="ugap_path",
+                      help="path to UGAP [REQUIRED]",
+                      action="callback", callback=test_dir, type="string")
     options, args = parser.parse_args()
-    mandatories = ["forward_read","name","reverse_read"]
+    mandatories = ["forward_read","name","reverse_read","ugap_path"]
     for m in mandatories:
         if not options.__dict__[m]:
             print "\nMust provide %s.\n" %m
             parser.print_help()
             exit(-1)
     main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,options.coverage,
-         options.proportion,options.temp_files,options.reduce,options.processors,options.careful)
+         options.proportion,options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path)
     
