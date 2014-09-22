@@ -18,8 +18,8 @@ from subprocess import Popen
 
 
 #UGAP_PATH="/Users/jsahl/UGAP"
-sys.path.append('%s' % UGAP_PATH)
-sys.path.append('%s/share' % UGAP_PATH)
+#sys.path.append('%s' % UGAP_PATH)
+#sys.path.append('%s/share' % UGAP_PATH)
 GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
 PICARD_PATH=UGAP_PATH+"/bin/"
 TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
@@ -380,6 +380,10 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     
 def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,ugap_path):
     UGAP_PATH=ugap_path
+    GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
+    PICARD_PATH=UGAP_PATH+"/bin/"
+    TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
+    PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
     if os.path.exists(WGFAST_PATH):
         sys.path.append("%s" % WGFAST_PATH)
     else:
