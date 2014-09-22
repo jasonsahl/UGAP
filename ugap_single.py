@@ -384,8 +384,8 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
     PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
-    if os.path.exists(WGFAST_PATH):
-        sys.path.append("%s" % WGFAST_PATH)
+    if os.path.exists(UGAP_PATH):
+        sys.path.append("%s" % UGAP_PATH)
     else:
         print "your UGAP path is not correct.  Edit the path in ugap_pbs_prep.py and try again"
         sys.exit()
