@@ -20,12 +20,12 @@ from subprocess import Popen
 #UGAP_PATH="/Users/jsahl/UGAP"
 #sys.path.append('%s' % UGAP_PATH)
 #sys.path.append('%s/share' % UGAP_PATH)
-GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
-PICARD_PATH=UGAP_PATH+"/bin/"
-TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
+#GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
+#PICARD_PATH=UGAP_PATH+"/bin/"
+#TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
 #changed to 1.7 on 3/24/14
 #changed to 1.8 on 6/17/14
-PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
+#PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
 
 rec=1
 
