@@ -11,23 +11,30 @@ try:
     from ugap.util import *
     from igs.utils import logging as log_isg
 except:
-    print "Environment not set correctly"
+    print "Environment not set correctly, correct ugap_single.py environment"
     sys.exit()
 import errno
 from subprocess import Popen
 
 
-UGAP_PATH="/Users/jsahl/UGAP"
-sys.path.append('%s' % UGAP_PATH)
-sys.path.append('%s/share' % UGAP_PATH)
-GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
-PICARD_PATH=UGAP_PATH+"/bin/"
-TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
+#UGAP_PATH="/Users/jsahl/UGAP"
+#sys.path.append('%s' % UGAP_PATH)
+#sys.path.append('%s/share' % UGAP_PATH)
+#GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
+#PICARD_PATH=UGAP_PATH+"/bin/"
+#TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
 #changed to 1.7 on 3/24/14
 #changed to 1.8 on 6/17/14
-PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
+#PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
 
 rec=1
+
+def test_dir(option, opt_str, value, parser):
+    if os.path.exists(value):
+        setattr(parser.values, option.dest, value)
+    else:
+        print "directory of fastas cannot be found"
+        sys.exit()
 
 def autoIncrement(): 
     global rec 
@@ -135,6 +142,15 @@ def get_coverage(bam,size):
     """does the actual work"""
     subprocess.check_call("genomeCoverageBed -d -ibam %s -g %s > tmp.out" % (bam,size), shell=True)
 
+def slice_asesmbly(in_fasta, size, out_fasta):
+    input = open(in_fasta, "U")
+    outfile = open(out_fasta, "w")
+    for record in SeqIO.parse(input, "fasta"):
+        print >> outfile, ">"+record.id+"\n",
+        print >> outfile, record.seq[0:size]
+    input.close()
+    outfile.close()
+
 def remove_column(temp_file):
     infile = open(temp_file, "rU")
     outfile = open("coverage.out", "w")
@@ -186,7 +202,7 @@ def get_seq_length(ref):
     outfile.close()
 
 
-def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful):
+def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH):
     if "NULL" not in reduce:
         try:
             subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce, shell=True)
@@ -355,13 +371,24 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     doc("coverage.out", "genome_size.txt", name, coverage)
     os.system("cp %s_%s_depth.txt %s/UGAP_assembly_results" % (name,coverage,start_path))
     """new code ends here"""
+    slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     try:
-        os.system("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path))
+        subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
         print "tried to copy prokka files, but prokka doesn't appear to be installed"
         pass
     
-def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful):
+def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,ugap_path):
+    UGAP_PATH=ugap_path
+    GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
+    PICARD_PATH=UGAP_PATH+"/bin/"
+    TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
+    PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
+    if os.path.exists(UGAP_PATH):
+        sys.path.append("%s" % UGAP_PATH)
+    else:
+        print "your UGAP path is not correct.  Edit the path in ugap_pbs_prep.py and try again"
+        sys.exit()
     start_dir = os.getcwd()
     start_path = os.path.abspath("%s" % start_dir)
     forward_path = os.path.abspath("%s" % forward_read)
@@ -397,9 +424,9 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
     """done checking for dependencies"""
     os.chdir("%s/%s.work_directory" % (start_path,name))
     if "NULL" not in reduce:
-        run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful)
+        run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH)
     else:
-	run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful)
+        run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH)
     os.chdir("%s" % start_path)
     if temp_files == "F":
         os.system("rm -rf %s.work_directory" % name)
@@ -440,13 +467,16 @@ if __name__ == "__main__":
     parser.add_option("-x", "--careful", dest="careful",
                       help="use careful option in spades? Defaults to T",
                       action="callback", callback=test_truths, type="string", default="T")
+    parser.add_option("-z", "--ugap_path", dest="ugap_path",
+                      help="path to UGAP [REQUIRED]",
+                      action="callback", callback=test_dir, type="string")
     options, args = parser.parse_args()
-    mandatories = ["forward_read","name","reverse_read"]
+    mandatories = ["forward_read","name","reverse_read","ugap_path"]
     for m in mandatories:
         if not options.__dict__[m]:
             print "\nMust provide %s.\n" %m
             parser.print_help()
             exit(-1)
     main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,options.coverage,
-         options.proportion,options.temp_files,options.reduce,options.processors,options.careful)
+         options.proportion,options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path)
     

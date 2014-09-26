@@ -14,6 +14,8 @@ from ugap.util import read_file_sets
 from ugap.util import get_readFile_components
 import sys
 
+UGAP_PATH="/Users/jsahl/UGAP"
+
 def test_dir(option, opt_str, value, parser):
     if os.path.exists(value):
         setattr(parser.values, option.dest, value)
@@ -45,7 +47,7 @@ def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,pr
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
     for k,v in fileSets.iteritems():
-        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)
+        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)
     
 if __name__ == "__main__":
     usage="usage: %prog [options]"

@@ -12,14 +12,14 @@ import sys
 
 """UGAP_PATH must be modified for the install
 location on your machine"""
-UGAP_PATH="/Users/jsahl/UGAP"
-sys.path.append('%s' % UGAP_PATH)
-sys.path.append('%s/share' % UGAP_PATH)
+#UGAP_PATH="/Users/jsahl/UGAP"
+#sys.path.append('%s' % UGAP_PATH)
+#sys.path.append('%s/share' % UGAP_PATH)
 """set the paths for all of the java dependencies"""
-GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
-PICARD_PATH=UGAP_PATH+"/bin/"
-TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
-PILON_PATH=UGAP_PATH+"/bin/pilon-1.5.jar"
+#GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
+#PICARD_PATH=UGAP_PATH+"/bin/"
+#TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
+#PILON_PATH=UGAP_PATH+"/bin/pilon-1.5.jar"
 
 def get_readFile_components(full_file_path):
     (file_path,file_name) = os.path.split(full_file_path)
