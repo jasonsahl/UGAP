@@ -84,6 +84,9 @@ def read_file_sets(dir_path):
 
     return fileSets
 
+def get_seq_name(in_fasta):
+    """used for renaming the sequences"""
+    return os.path.basename(in_fasta)
 
 def get_sequence_length(fastq_in, name):
     os.system("gzip -dc %s > %s.tmp.fastq" % (fastq_in,name))

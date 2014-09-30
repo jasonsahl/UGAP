@@ -16,17 +16,6 @@ except:
 import errno
 from subprocess import Popen
 
-
-#UGAP_PATH="/Users/jsahl/UGAP"
-#sys.path.append('%s' % UGAP_PATH)
-#sys.path.append('%s/share' % UGAP_PATH)
-#GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
-#PICARD_PATH=UGAP_PATH+"/bin/"
-#TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
-#changed to 1.7 on 3/24/14
-#changed to 1.8 on 6/17/14
-#PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
-
 rec=1
 
 def test_dir(option, opt_str, value, parser):
@@ -201,9 +190,33 @@ def get_seq_length(ref):
     infile.close()
     outfile.close()
 
+def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_path, length):
+    args=['java','-jar','%s' % trim_path, 'PE', '-threads', '%s' % processors,
+              '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % ID, 'F.unpaired.fastq.gz',
+	      '%s.R.paired.fastq.gz' % ID, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:2:30:10' % ugap_path,
+	      'MINLEN:%s' % length]
+    vcf_fh = open('%s.trimmomatic.out' % ID, 'w')
+    log_fh = open('%s.trimmomatic.log' % ID, 'w')
+    try:
+        trim = Popen(args, stderr=vcf_fh, stdout=log_fh)
+        trim.wait()
+    except:
+        log_isg.logPrint("problem encountered with trimmomatic")
+
+def slice_assembly(infile, keep_length, outfile):
+    input=open(infile, "rU")
+    output = open(outfile, "w")
+    start=0
+    end=keep_length
+    for record in SeqIO.parse(input,"fasta"):
+        print >> output,">"+record.id+"\n",
+        print >> output, record.seq[start:end]
+    input.close()
+    output.close()
 
 def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH):
     if "NULL" not in reduce:
+        #Reads will be depleted in relation to a given reference
         try:
             subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce, shell=True)
         except:
@@ -222,92 +235,42 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     else:
         pass
     if int(get_sequence_length(forward_path, name))<=200:
-        args=['java','-jar','%s' % TRIM_PATH,'PE', '-threads', '%s' % processors,
-              '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % name, 'F.unpaired.fastq.gz',
-	      '%s.R.paired.fastq.gz' % name, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:2:30:10' % UGAP_PATH,
-	      'MINLEN:%s' % (int(get_sequence_length(forward_path,name)/2))]
-        try:
-            vcf_fh = open('%s.trimmomatic.out' % name, 'w')
-        except:
-            log_isg.logPrint('could not open trimmomatic file')
-        try:
-            log_fh = open('%s.trimmomatic.log' % name, 'w')
-        except:
-            log_isg.logPrint('could not open log file')
-        try:
-            trim = Popen(args, stderr=vcf_fh, stdout=log_fh)
-            trim.wait()
-        except:
-            log_isg.logPrint("problem encountered with trimmomatic")
-        if error_corrector=="hammer":
-            if careful == "T":
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            else:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-        elif error_corrector=="musket":
-            ab = subprocess.call(['which', 'musket'])
-            if ab == 0:
-                pass
-            else:
-                print "musket isn't in your path, but needs to be!"
-                sys.exit()
-            subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
-            subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
-            subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
-            if careful == "T":
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            else:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+        ks = "21,33,55,77"
+    elif int(get_sequence_length(forward_path, name))>200:
+        ks = "21,33,55,77"
+    length = (int(get_sequence_length(forward_path,name)/2))
+    if os.path.isfile("%s.F.paired.fastq.gz" % name):
+        pass
+    else:
+        run_trimmomatic(TRIM_PATH, processors, forward_path, reverse_path, name, UGAP_PATH, length)
+    #This next section runs spades according to the input parameters
+    if error_corrector=="hammer":
+        if careful == "T":
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
         else:
-            if careful == "T":
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            else:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77 --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-    if int(get_sequence_length(forward_path, name))>200:
-        args=['java','-jar','%s' % TRIM_PATH,'PE',
-              '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % name, 'F.unpaired.fastq.gz',
-	      '%s.R.paired.fastq.gz' % name, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:2:30:10' % UGAP_PATH,
-	      'MINLEN:150']
-        try:
-            vcf_fh = open('%s.trimmomatic.out' % name, 'w')
-        except:
-            log_isg.logPrint('could not open trimmomatic file')
-        try:
-            log_fh = open('%s.trimmomatic.log' % name, 'w')
-        except:
-            log_isg.logPrint('could not open log file')
-        try:
-            trim = Popen(args, stderr=vcf_fh, stdout=log_fh)
-            trim.wait()
-        except:
-            log_isg.logPrint("problem encountered with trimmomatic")
-        """assemble sequences with spades"""
-        if error_corrector=="hammer":
-            if careful == "T":
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            else:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-        elif error_corrector=="musket":
-            ab = subprocess.call(['which', 'musket'])
-            if ab == 0:
-                pass
-            else:
-                print "musket isn't in your path, but needs to be!"
-                sys.exit()
-            subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
-            subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
-            subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
-            if careful == "T":
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            else:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler -1 %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+    elif error_corrector=="musket":
+        ab = subprocess.call(['which', 'musket'])
+        if ab == 0:
+            pass
         else:
-            if careful == "T":
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-            else:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k 21,33,55,77,127 --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-    os.system("gzip -dc %s.F.paired.fastq.gz > %s_1.fastq" % (name,name))
-    os.system("gzip -dc %s.R.paired.fastq.gz > %s_2.fastq" % (name,name))
+            print "musket isn't in your path, but needs to be!"
+            sys.exit()
+        subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
+        subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
+        subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
+        if careful == "T":
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+        else:
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+    else:
+        if careful == "T":
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+        else:
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+    #finished running spades
+    #os.system("gzip -dc %s.F.paired.fastq.gz > %s_1.fastq" % (name,name))
+    #os.system("gzip -dc %s.R.paired.fastq.gz > %s_2.fastq" % (name,name))
     os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
     os.system("%s/bin/psi-cd-hit.pl -i %s.%s.spades.assembly.fasta -o %s.%s.nr.spades.assembly.fasta -c 0.99999999 -G 1 -g 1 -prog blastn -exec local -l 500" % (UGAP_PATH,name,keep,name,keep))
@@ -315,7 +278,8 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     rename_multifasta("%s_pagit.fasta" % name, name, "%s_renamed.fasta" % name)
     subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
     os.system("samtools faidx %s_renamed.fasta" % name)
-    run_bwa("%s_1.fastq" % name, "%s_2.fastq" % name, processors, name,"%s_renamed.fasta" % name)
+    #just changed this line
+    run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
     make_bam("%s.sam" % name, name)
     os.system("java -jar %s/CreateSequenceDictionary.jar R=%s_renamed.fasta O=%s_renamed.dict > /dev/null 2>&1" % (PICARD_PATH, name, name))
     run_gatk("%s_renamed.fasta" % name, processors, name, "%s" % GATK_PATH)
@@ -345,10 +309,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s_final_assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name))
 	filter_seqs("%s_final_assembly.fasta" % name, keep, name)
         try:
-            os.system("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep))
+            subprocess.check_call("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep), shell=True, stderr=open(os.devnull, "w"))
         except:
             print "problem fixing missing space"
-            pass
         try:
             os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
         except:
@@ -359,7 +322,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     except:
         pass
     os.system("bwa index %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,keep))
-    run_bwa("%s_1.fastq" % name, "%s_2.fastq" % name, processors, name,"%s.%s.spades.assembly.fasta" % (name,keep))
+    run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s.%s.spades.assembly.fasta" % (name,keep))
     make_bam("%s.sam" % name, name)
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep))
     subprocess.check_call("tr ' ' '\t' < tmp.txt > genome_size.txt", shell=True)
@@ -376,7 +339,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
         print "tried to copy prokka files, but prokka doesn't appear to be installed"
-        pass
     
 def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,ugap_path):
     UGAP_PATH=ugap_path
