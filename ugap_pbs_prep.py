@@ -56,7 +56,7 @@ def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,pr
             print "%s is not in your path, but needs to be!" % dependency
             sys.exit()
     for k,v in fileSets.iteritems():
-        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+str(blast_nt)
+        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)
     
 if __name__ == "__main__":
     usage="usage: %prog [options]"
