@@ -13,6 +13,7 @@ import logging
 from ugap.util import read_file_sets
 from ugap.util import get_readFile_components
 import sys
+import subprocess
 
 UGAP_PATH="/Users/jsahl/UGAP"
 
@@ -46,6 +47,14 @@ def test_truths(option, opt_str, value, parser):
 def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
+    dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
+    for dependency in dependencies:
+        ra = subprocess.call(['which', '%s' % dependency])
+        if ra == 0:
+            pass
+        else:
+            print "%s is not in your path, but needs to be!" % dependency
+            sys.exit()
     for k,v in fileSets.iteritems():
         print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)
     

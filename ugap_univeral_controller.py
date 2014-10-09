@@ -31,8 +31,11 @@ def parse_config_file(config_file):
     datasets = ()
     infile = open(config_file, "U")
     for line in infile:
-        fields = line.split()
-        datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10],fields[11]),)+datasets
+        if line.startswith("#"):
+            pass
+        else:
+            fields = line.split()
+            datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10],fields[11]),)+datasets
     return datasets
 
 def send_jobs(datasets,my_mem,controller,queue):
