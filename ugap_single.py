@@ -214,7 +214,7 @@ def slice_assembly(infile, keep_length, outfile):
     input.close()
     output.close()
 
-def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH):
+def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt):
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
         try:
@@ -330,12 +330,14 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("cp %s_%s_depth.txt %s/UGAP_assembly_results" % (name,coverage,start_path))
     """new code ends here"""
     slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
+    if "NULL" not in blast_nt:
+        subprocess.check_call("blastall -p blastn -i %s.chunks.fasta -d %s -o blast.out -e 0.01" % (name, blast_nt), shell=True)
     try:
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
         print "tried to copy prokka files, but prokka doesn't appear to be installed"
     
-def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,ugap_path):
+def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,ugap_path,blast_nt):
     UGAP_PATH=ugap_path
     GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
     PICARD_PATH=UGAP_PATH+"/bin/"
@@ -350,6 +352,7 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
     start_path = os.path.abspath("%s" % start_dir)
     forward_path = os.path.abspath("%s" % forward_read)
     reverse_path = os.path.abspath("%s" % reverse_read)
+    blast_nt_path = os.path.abspath("%s" % blast_nt)
     try:
         os.makedirs('%s/UGAP_assembly_results' % start_path)
     except OSError, e:
@@ -383,9 +386,15 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
     if "NULL" not in reduce:
         subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce_path, shell=True)
     if "NULL" not in reduce:
-        run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH)
+        if "NULL" not in blast_nt:
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt_path)
+        else:
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt)
     else:
-        run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH)
+        if "NULL" not in blast_nt:
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt_path)
+        else:
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt)
     os.chdir("%s" % start_path)
     if temp_files == "F":
         os.system("rm -rf %s.work_directory" % name)
@@ -429,6 +438,9 @@ if __name__ == "__main__":
     parser.add_option("-z", "--ugap_path", dest="ugap_path",
                       help="path to UGAP [REQUIRED]",
                       action="callback", callback=test_dir, type="string")
+    parser.add_option("-b", "--blast_nt", dest="blast_nt",
+                      help="PATH to blast nt database, defaults to NULL",
+                      action="store", type="string", default="NULL")
     options, args = parser.parse_args()
     mandatories = ["forward_read","name","reverse_read","ugap_path"]
     for m in mandatories:
@@ -437,5 +449,5 @@ if __name__ == "__main__":
             parser.print_help()
             exit(-1)
     main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,options.coverage,
-         options.proportion,options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path)
+         options.proportion,options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path,options.blast_nt)
     

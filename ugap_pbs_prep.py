@@ -44,7 +44,7 @@ def test_truths(option, opt_str, value, parser):
         print "must select from T or F"
         sys.exit()
 
-def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful):
+def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,blast_nt):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
     dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
@@ -56,7 +56,7 @@ def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,pr
             print "%s is not in your path, but needs to be!" % dependency
             sys.exit()
     for k,v in fileSets.iteritems():
-        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)
+        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+str(blast_nt)
     
 if __name__ == "__main__":
     usage="usage: %prog [options]"
@@ -88,6 +88,9 @@ if __name__ == "__main__":
     parser.add_option("-x", "--careful", dest="careful",
                       help="use careful option in spades? Defaults to T",
                       action="callback", callback=test_truths, type="string", default="T")
+    parser.add_option("-b", "--blast_nt", dest="blast_nt",
+                      help="PATH to BLAST nt database, defaults to NULL",
+                      action="store", type="string", default="NULL")
     options, args = parser.parse_args()
     
     mandatories = ["directory"]
@@ -98,4 +101,4 @@ if __name__ == "__main__":
             exit(-1)
 
     main(options.directory,options.error_corrector,options.keep,options.coverage,options.proportion,options.temp_files,
-         options.reduce,options.processors,options.careful)
+         options.reduce,options.processors,options.careful,options.blast_nt)
