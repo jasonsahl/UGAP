@@ -15,6 +15,7 @@ except:
     sys.exit()
 import errno
 from subprocess import Popen
+import numpy as np
 
 rec=1
 
@@ -190,6 +191,19 @@ def get_seq_length(ref):
     infile.close()
     outfile.close()
 
+def find_outliers(coverages):
+    outs = []
+    for line in open(coverages, "U"):
+        fields = line.split()
+        if len(fields) == 1:
+            pass
+        else:
+            outs.append.fields[1]
+    values = map(outs, float)
+    no_outliers = abs(values - np.mean(values)) < m * np.std(values)
+    #for value in no_outliers
+    
+
 def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_path, length):
     args=['java','-jar','%s' % trim_path, 'PE', '-threads', '%s' % processors,
               '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % ID, 'F.unpaired.fastq.gz',
@@ -328,6 +342,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     report_stats("results.txt", "%s_renamed_header.bam" % name, name)
     doc("coverage.out", "genome_size.txt", name, coverage)
     os.system("cp %s_%s_depth.txt %s/UGAP_assembly_results" % (name,coverage,start_path))
+    find_outliers("%s_%s_depth.txt" % (name,coverage))
     """new code ends here"""
     slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     if "NULL" not in blast_nt:
