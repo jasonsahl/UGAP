@@ -49,7 +49,7 @@ def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,pr
     fileSets=read_file_sets("%s" % dir_path)
     dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
     for dependency in dependencies:
-        ra = subprocess.call(['which', '%s' % dependency, ">", "/dev/null 2>&1"])
+        ra = subprocess.check_call('which %s > /dev/null 2>&1' % dependency, shell=True)
         if ra == 0:
             pass
         else:
