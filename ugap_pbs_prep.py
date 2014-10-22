@@ -15,7 +15,7 @@ from ugap.util import get_readFile_components
 import sys
 import subprocess
 
-UGAP_PATH="/Users/jsahl/UGAP"
+UGAP_PATH="/Users/jasonsahl/tools/UGAP"
 
 def test_dir(option, opt_str, value, parser):
     if os.path.exists(value):
