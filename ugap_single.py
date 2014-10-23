@@ -15,7 +15,7 @@ except:
     sys.exit()
 import errno
 from subprocess import Popen
-import numpy as np
+    
 
 rec=1
 
@@ -192,22 +192,25 @@ def get_seq_length(ref):
     outfile.close()
 
 def find_outliers(coverages):
-    outs = []
-    outfile = open("outliers.txt", "w")
-    for line in open(coverages, "U"):
-        fields = line.split()
-        if len(fields) == 1:
-            pass
-        else:
-            outs.append.fields[1]
-    values = map(outs, float)
-    no_outliers = abs(values - np.mean(values)) < m * np.std(values)
-    for value in no_outliers:
-        if value not in outs:
-            print >> outfile, value
-    outfile.close()
+    try:
+        import numpy as np
+        outs = []
+        outfile = open("outliers.txt", "w")
+        for line in open(coverages, "U"):
+            fields = line.split()
+            if len(fields) == 1:
+                pass
+            else:
+                outs.append.fields[1]
+        values = map(outs, float)
+        no_outliers = abs(values - np.mean(values)) < m * np.std(values)
+        for value in no_outliers:
+            if value not in outs:
+                print >> outfile, value
+        outfile.close()
+    except:
+        "numpy not installed.  Will not find outliers"
     
-
 def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_path, length):
     args=['java','-jar','%s' % trim_path, 'PE', '-threads', '%s' % processors,
               '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % ID, 'F.unpaired.fastq.gz',
