@@ -194,20 +194,17 @@ def get_seq_length(ref):
 def find_outliers(coverages):
     try:
         import numpy as np
-        outs = []
+        outs = {}
         outfile = open("outliers.txt", "w")
         for line in open(coverages, "U"):
             fields = line.split()
             if len(fields) == 1:
                 pass
             else:
-                outs.append(fields[1])
-        values = map(outs, float)
-        no_outliers = abs(values - np.mean(values)) < m * np.std(values)
-        for value in no_outliers:
-            if value not in outs:
-                print >> outfile, value
-        outfile.close()
+                outs.update({fields[0]:fields[1]})
+        for k,v in outs.iteritems():
+            if float(v) == 0:
+                print >> outfile, k,
     except:
         "numpy not installed.  Will not find outliers"
     
@@ -355,6 +352,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     if "NULL" not in blast_nt:
         subprocess.check_call("blastall -p blastn -i %s.chunks.fasta -d %s -o blast.out -e 0.01" % (name, blast_nt), shell=True)
         os.system("perl %s/bin/blast_parse.pl blast.out | sort -u -k 1,1 > %s/UGAP_assembly_results/%s_blast_report.txt" % (UGAP_PATH, start_path, name))
+        merge_blast_with_coverages("%s/UGAP_assembly_results/%s_blast_report.txt" % ( start_path, name), "%s_%s_depth.txt" % (name,coverage))
     try:
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
