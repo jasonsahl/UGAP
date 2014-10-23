@@ -201,7 +201,7 @@ def find_outliers(coverages):
             if len(fields) == 1:
                 pass
             else:
-                outs.append.fields[1]
+                outs.append(fields[1])
         values = map(outs, float)
         no_outliers = abs(values - np.mean(values)) < m * np.std(values)
         for value in no_outliers:
