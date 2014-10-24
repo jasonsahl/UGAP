@@ -15,7 +15,6 @@ except:
     sys.exit()
 import errno
 from subprocess import Popen
-    
 
 rec=1
 
@@ -220,6 +219,7 @@ def merge_blast_with_coverages(blast_report, coverages):
     from operator import itemgetter
     coverage_dict = {}
     out_list = []
+    outfile = open("depth_blast_merged.txt", "w")
     for line in open(coverages, "U"):
         fields = line.split()
         if len(fields)==1:
@@ -231,15 +231,10 @@ def merge_blast_with_coverages(blast_report, coverages):
         fields = line.split("\t")
         file_list.append(fields[0])
         file_list.append(fields[1])
-        file_list.append(float(coverage_dict.get(fields[0])))
+        file_list.append(coverage_dict.get(fields[0]))
         out_list.append(file_list)
-    for i in out_list: print i
-    sorted(out_list, key=itemgetter(2), reverse=True)
     for alist in out_list:
-        print "\t".join(alist)
-        
-        
-    
+        print >> outfile, "\t".join(alist)
 
 def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt):
     if "NULL" not in reduce:
@@ -361,6 +356,8 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         subprocess.check_call("blastall -p blastn -i %s.chunks.fasta -d %s -o blast.out -e 0.01" % (name, blast_nt), shell=True)
         os.system("perl %s/bin/blast_parse.pl blast.out | sort -u -k 1,1 > %s/UGAP_assembly_results/%s_blast_report.txt" % (UGAP_PATH, start_path, name))
         merge_blast_with_coverages("%s/UGAP_assembly_results/%s_blast_report.txt" % ( start_path, name), "%s_%s_depth.txt" % (name,coverage))
+        os.system("sed 's/ /_/g' depth_blast_merged.txt > tmp.txt")
+        os.system("sort -gr -k 3,3 tmp.txt > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
     try:
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
