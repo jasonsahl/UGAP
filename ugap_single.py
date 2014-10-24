@@ -191,23 +191,7 @@ def get_seq_length(ref):
     infile.close()
     outfile.close()
 
-def find_outliers(coverages):
-    try:
-        import numpy as np
-        outs = {}
-        outfile = open("outliers.txt", "w")
-        for line in open(coverages, "U"):
-            fields = line.split()
-            if len(fields) == 1:
-                pass
-            else:
-                outs.update({fields[0]:fields[1]})
-        for k,v in outs.iteritems():
-            if float(v) == 0:
-                print >> outfile, k,
-    except:
-        "numpy not installed.  Will not find outliers"
-    
+  
 def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_path, length):
     args=['java','-jar','%s' % trim_path, 'PE', '-threads', '%s' % processors,
               '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % ID, 'F.unpaired.fastq.gz',
@@ -231,6 +215,31 @@ def slice_assembly(infile, keep_length, outfile):
         print >> output, record.seq[start:end]
     input.close()
     output.close()
+
+def merge_blast_with_coverages(blast_report, coverages):
+    from operator import itemgetter
+    coverage_dict = {}
+    out_list = []
+    for line in open(coverages, "U"):
+        fields = line.split()
+        if len(fields)==1:
+            pass
+        else:
+            coverage_dict.update({fields[0]:fields[1]})
+    for line in open(blast_report, "U"):
+        file_list = []
+        fields = line.split("\t")
+        file_list.append(fields[0])
+        file_list.append(fields[1])
+        file_list.append(float(coverage_dict.get(fields[0])))
+        out_list.append(file_list)
+    for i in out_list: print i
+    sorted(out_list, key=itemgetter(2), reverse=True)
+    for alist in out_list:
+        print "\t".join(alist)
+        
+        
+    
 
 def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt):
     if "NULL" not in reduce:
@@ -346,7 +355,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     report_stats("results.txt", "%s_renamed_header.bam" % name, name)
     doc("coverage.out", "genome_size.txt", name, coverage)
     os.system("cp %s_%s_depth.txt %s/UGAP_assembly_results" % (name,coverage,start_path))
-    find_outliers("%s_%s_depth.txt" % (name,coverage))
     """new code ends here"""
     slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     if "NULL" not in blast_nt:
