@@ -40,7 +40,7 @@ def parse_config_file(config_file):
 
 def send_jobs(datasets,my_mem,controller,queue):
     for data in datasets:
-        if controller == "sbatch":
+        if controller == "slurm":
             output, input = popen2('sbatch')
         else:
             output, input = popen2('qsub')
