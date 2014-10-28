@@ -242,7 +242,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         try:
             run_bwa("%s" % forward_path, "%s" % reverse_path, processors, name,"%s" % reduce)
             os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
-            os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > /dev/null 2>&1" % (name,name))
+            os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > reduce_results.txt" % (name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
             os.system("cp %s_1.fastq.gz %s" % (name,forward_path))
             os.system("cp %s_2.fastq.gz %s" % (name,reverse_path))
