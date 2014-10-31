@@ -286,8 +286,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         else:
             subprocess.check_call("spades.py -o %s.spades -t %s -k %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
     #finished running spades
-    #os.system("gzip -dc %s.F.paired.fastq.gz > %s_1.fastq" % (name,name))
-    #os.system("gzip -dc %s.R.paired.fastq.gz > %s_2.fastq" % (name,name))
     os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
     os.system("%s/bin/psi-cd-hit.pl -i %s.%s.spades.assembly.fasta -o %s.%s.nr.spades.assembly.fasta -c 0.99999999 -G 1 -g 1 -prog blastn -exec local -l 500" % (UGAP_PATH,name,keep,name,keep))
@@ -295,7 +293,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     rename_multifasta("%s_pagit.fasta" % name, name, "%s_renamed.fasta" % name)
     subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
     os.system("samtools faidx %s_renamed.fasta" % name)
-    #just changed this line
     run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
     make_bam("%s.sam" % name, name)
     os.system("java -jar %s/CreateSequenceDictionary.jar R=%s_renamed.fasta O=%s_renamed.dict > /dev/null 2>&1" % (PICARD_PATH, name, name))
@@ -321,7 +318,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     except:
         pass
     try:
-        os.system("java -jar %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,name,name,name))
+        os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
 	rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
         os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s_final_assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name))
 	filter_seqs("%s_final_assembly.fasta" % name, keep, name)
@@ -368,7 +365,8 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
     GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
-    PILON_PATH=UGAP_PATH+"/bin/pilon-1.8.jar"
+    #updated to 1.9 on Oct 31, 2014
+    PILON_PATH=UGAP_PATH+"/bin/pilon-1.9.jar"
     if os.path.exists(UGAP_PATH):
         sys.path.append("%s" % UGAP_PATH)
     else:
