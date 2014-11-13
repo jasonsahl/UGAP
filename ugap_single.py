@@ -251,10 +251,14 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             sys.exit()
     else:
         pass
-    if int(get_sequence_length(forward_path, name))<=200:
+    if int(get_sequence_length(forward_path, name))<=200 and int(get_sequence_length(forward_path, name))>=100:
         ks = "21,33,55,77"
     elif int(get_sequence_length(forward_path, name))>200:
-        ks = "21,33,55,77"
+        ks = "21,33,55,77,99,127"
+    elif int(get_sequence_length(forward_path, name))<100:
+        ks = "21,33"
+    else:
+        pass
     length = (int(get_sequence_length(forward_path,name)/2))
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
