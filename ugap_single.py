@@ -354,7 +354,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     """new code ends here"""
     slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     if "NULL" not in blast_nt:
-        subprocess.check_call("blastall -p blastn -i %s.chunks.fasta -d %s -o blast.out -e 0.01" % (name, blast_nt), shell=True)
+        subprocess.check_call("blastall -p blastn -i %s.chunks.fasta -d %s -o blast.out -e 0.01 -a %s" % (name, blast_nt, processors), shell=True)
         os.system("perl %s/bin/blast_parse.pl blast.out | sort -u -k 1,1 > %s/UGAP_assembly_results/%s_blast_report.txt" % (UGAP_PATH, start_path, name))
         merge_blast_with_coverages("%s/UGAP_assembly_results/%s_blast_report.txt" % ( start_path, name), "%s_%s_depth.txt" % (name,coverage))
         os.system("sed 's/ /_/g' depth_blast_merged.txt > tmp.txt")
