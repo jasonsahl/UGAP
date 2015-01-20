@@ -228,7 +228,7 @@ def find_missing_coverages(depth, merged):
     for k,v in all_ids.iteritems():
         hits = []
         for line in open(merged, "U"):
-            fields = line.split():
+            fields = line.split()
             if k == fields[0]:
                 print >> outfile, line,
             else:
