@@ -215,6 +215,28 @@ def slice_assembly(infile, keep_length, outfile):
     input.close()
     output.close()
 
+def find_missing_coverages(depth, merged):
+    all_ids = {}
+    outfile = open("new.txt", "w")
+    for line in open(depth, "U"):
+        fields = line.split()
+        if len(fields)==1:
+            pass
+        else:
+            all_ids.update({fields[0]:fields[1]})
+    straggler = {}
+    for k,v in all_ids.iteritems():
+        hits = []
+        for line in open(merged, "U"):
+            fields = line.split():
+            if k == fields[0]:
+                print >> outfile, line,
+            else:
+                hits.append("1")
+        if len(hits)>0:
+            print >> outfile, k, "no blast hit", v,
+    outfile.close()
+               
 def merge_blast_with_coverages(blast_report, coverages):
     from operator import itemgetter
     coverage_dict = {}
@@ -354,11 +376,12 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     """new code ends here"""
     slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     if "NULL" not in blast_nt:
-        subprocess.check_call("blastall -p blastn -i %s.chunks.fasta -d %s -o blast.out -e 0.01 -a %s" % (name, blast_nt, processors), shell=True)
+        subprocess.check_call("blastall -p blastn -i %s.chunks.fasta -F F -d %s -o blast.out -e 0.01 -a %s" % (name, blast_nt, processors), shell=True)
         os.system("perl %s/bin/blast_parse.pl blast.out | sort -u -k 1,1 > %s/UGAP_assembly_results/%s_blast_report.txt" % (UGAP_PATH, start_path, name))
         merge_blast_with_coverages("%s/UGAP_assembly_results/%s_blast_report.txt" % ( start_path, name), "%s_%s_depth.txt" % (name,coverage))
         os.system("sed 's/ /_/g' depth_blast_merged.txt > tmp.txt")
         os.system("sort -gr -k 3,3 tmp.txt > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
+        find_missing_coverages("%s_%s_depth.txt" % (name,coverage), "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
     try:
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
