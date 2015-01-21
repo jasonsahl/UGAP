@@ -224,17 +224,19 @@ def find_missing_coverages(depth, merged):
             pass
         else:
             all_ids.update({fields[0]:fields[1]})
-    straggler = {}
     for k,v in all_ids.iteritems():
         hits = []
+        nohits = []
         for line in open(merged, "U"):
             fields = line.split()
             if k == fields[0]:
                 print >> outfile, line,
-            else:
                 hits.append("1")
-        if len(hits)>0:
-            print >> outfile, k, "no blast hit", v,
+            else:
+                nohits.append("1")
+        allhits = hits + nohits
+        if len(nohits)==len(allhits):
+            print >> outfile, str(k)+"\t"+"no blast hit"+"\t"+str(v)
     outfile.close()
                
 def merge_blast_with_coverages(blast_report, coverages):
@@ -382,6 +384,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         os.system("sed 's/ /_/g' depth_blast_merged.txt > tmp.txt")
         os.system("sort -gr -k 3,3 tmp.txt > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
         find_missing_coverages("%s_%s_depth.txt" % (name,coverage), "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
+        os.system("sort -gr -k 3,3 new.txt > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
     try:
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
