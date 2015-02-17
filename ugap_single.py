@@ -131,15 +131,6 @@ def get_coverage(bam,size):
     """does the actual work"""
     subprocess.check_call("genomeCoverageBed -d -ibam %s -g %s > tmp.out" % (bam,size), shell=True)
 
-def slice_asesmbly(in_fasta, size, out_fasta):
-    input = open(in_fasta, "U")
-    outfile = open(out_fasta, "w")
-    for record in SeqIO.parse(input, "fasta"):
-        print >> outfile, ">"+record.id+"\n",
-        print >> outfile, record.seq[0:size]
-    input.close()
-    outfile.close()
-
 def remove_column(temp_file):
     infile = open(temp_file, "rU")
     outfile = open("coverage.out", "w")
@@ -254,7 +245,7 @@ def merge_blast_with_coverages(blast_report, coverages):
         file_list = []
         fields = line.split("\t")
         file_list.append(fields[0])
-        file_list.append(fields[1])
+        file_list.append(fields[12])
         file_list.append(coverage_dict.get(fields[0]))
         out_list.append(file_list)
     for alist in out_list:
@@ -378,8 +369,10 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     """new code ends here"""
     slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     if "NULL" not in blast_nt:
-        subprocess.check_call("blastall -p blastn -i %s.chunks.fasta -F F -d %s -o blast.out -e 0.01 -a %s" % (name, blast_nt, processors), shell=True)
-        os.system("perl %s/bin/blast_parse.pl blast.out | sort -u -k 1,1 > %s/UGAP_assembly_results/%s_blast_report.txt" % (UGAP_PATH, start_path, name))
+        #subprocess.check_call("blastall -p blastn -i %s.chunks.fasta -F F -d %s -o blast.out -e 0.01 -a %s" % (name, blast_nt, processors), shell=True)
+        subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out blast.out" % (name, blast_nt, processors), shell=True) 
+        #os.system("perl %s/bin/blast_parse.pl blast.out | sort -u -k 1,1 > %s/UGAP_assembly_results/%s_blast_report.txt" % (UGAP_PATH, start_path, name))
+        os.system("cp blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (UGAP_PATH, start_path, name))
         merge_blast_with_coverages("%s/UGAP_assembly_results/%s_blast_report.txt" % ( start_path, name), "%s_%s_depth.txt" % (name,coverage))
         os.system("sed 's/ /_/g' depth_blast_merged.txt > tmp.txt")
         os.system("sort -gr -k 3,3 tmp.txt > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
