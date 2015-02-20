@@ -246,7 +246,7 @@ def merge_blast_with_coverages(blast_report, coverages):
         if line.startswith("#"):
             pass
         else:
-            fields = line.split()
+            fields = line.split("\t")
             file_list.append(fields[0])
             file_list.append(fields[12])
             file_list.append(coverage_dict.get(fields[0]))
