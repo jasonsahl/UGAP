@@ -180,7 +180,6 @@ def get_seq_length(ref):
         print >> outfile,record.id,len(record.seq)
     infile.close()
     outfile.close()
-
   
 def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_path, length):
     args=['java','-jar','%s' % trim_path, 'PE', '-threads', '%s' % processors,
@@ -243,10 +242,11 @@ def merge_blast_with_coverages(blast_report, coverages):
             coverage_dict.update({fields[0]:fields[1]})
     for line in open(blast_report, "U"):
         file_list = []
+        newline = line.strip()
         if line.startswith("#"):
             pass
         else:
-            fields = line.split("\t")
+            fields = newline.split("\t")
             file_list.append(fields[0])
             file_list.append(fields[12])
             file_list.append(coverage_dict.get(fields[0]))
