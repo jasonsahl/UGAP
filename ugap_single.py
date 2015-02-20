@@ -242,13 +242,21 @@ def merge_blast_with_coverages(blast_report, coverages):
             coverage_dict.update({fields[0]:fields[1]})
     for line in open(blast_report, "U"):
         file_list = []
+        tmp_dict = {}
         newline = line.strip()
         if line.startswith("#"):
             pass
         else:
             fields = newline.split("\t")
-            file_list.append(fields[0])
-            file_list.append(fields[12])
+            try:
+                tmp_dict[fields[0]].append(fields[12])
+            except KeyError:
+                tmp_dict[fields[0]]=[fields[12]]
+            #file_list.append(fields[0])
+            #file_list.append(fields[12])
+            for k,v in tmp_dict.iteritems():
+                file_list.append(k)
+                file_list.append(v[0])
             file_list.append(coverage_dict.get(fields[0]))
             out_list.append(file_list)
     for alist in out_list:
@@ -378,9 +386,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         os.system("cp blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name))
         merge_blast_with_coverages("%s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name), "%s_%s_depth.txt" % (name,coverage))
         os.system("sed 's/ /_/g' depth_blast_merged.txt > tmp.txt")
-        os.system("sort -gr -k 3,3 tmp.txt > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
+        os.system("sort -u -k 1,1 tmp.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
         find_missing_coverages("%s_%s_depth.txt" % (name,coverage), "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
-        os.system("sort -gr -k 3,3 new.txt > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
+        os.system("sort -u -k 1,1 new.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
     try:
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
