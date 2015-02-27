@@ -357,7 +357,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         pass
     #Runs Pilon, I assume that it runs correctly
     os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
-	rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
+    rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
     try:
         #Runs Prokka, if it's installed
         os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s_final_assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name))
