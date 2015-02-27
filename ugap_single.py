@@ -343,7 +343,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     try:
         to_fix=parse_vcf("%s.gatk.out" % name, coverage, proportion)
         log_isg.logPrint("number of SNPs to fix in %s = %s" % (name,len(to_fix)))
-	    if int(len(to_fix))>=1:
+        if int(len(to_fix))>=1:
             try:
                 fasta_to_tab("%s_renamed.fasta" % name, name)
                 fix_assembly("%s.out.tab" % name, to_fix, name)
