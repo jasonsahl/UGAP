@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """ugap single, meant to be run
-in conjunction with PBS"""
+in conjunction with PBS, SLURM, or SGE"""
 
 from optparse import OptionParser
 import os
@@ -252,8 +252,6 @@ def merge_blast_with_coverages(blast_report, coverages):
                 tmp_dict[fields[0]].append(fields[12])
             except KeyError:
                 tmp_dict[fields[0]]=[fields[12]]
-            #file_list.append(fields[0])
-            #file_list.append(fields[12])
             for k,v in tmp_dict.iteritems():
                 file_list.append(k)
                 file_list.append(v[0])
@@ -278,6 +276,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     else:
         pass
     if int(get_sequence_length(forward_path, name))<=200 and int(get_sequence_length(forward_path, name))>=100:
+        #Uses default K values, based on SPADes recs
         ks = "21,33,55,77"
     elif int(get_sequence_length(forward_path, name))>200:
         ks = "21,33,55,77,99,127"
@@ -285,7 +284,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         ks = "21,33"
     else:
         pass
+    #Gets the sequence length independently for each genomes
     length = (int(get_sequence_length(forward_path,name)/2))
+    #If trimmomatic has already been run, don't run again, trimmomatic requires PAIRED reads
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
     else:
@@ -317,12 +318,18 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             subprocess.check_call("spades.py -o %s.spades -t %s -k %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
     #finished running spades
     os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
+    #filters contigs by a user-defined length threshold, defaults to 200nts
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
+    #Calls an exterior script to de-replicate assemblies, can I come up with a better method?
     os.system("%s/bin/psi-cd-hit.pl -i %s.%s.spades.assembly.fasta -o %s.%s.nr.spades.assembly.fasta -c 0.99999999 -G 1 -g 1 -prog blastn -exec local -l 500" % (UGAP_PATH,name,keep,name,keep))
+    #This uses biopython to pretty up the sequences, but not sure it would affect downstream usability
     clean_fasta("%s.%s.nr.spades.assembly.fasta" % (name,keep),"%s_pagit.fasta" % name)
+    #Cleans up the names for downstream apps
     rename_multifasta("%s_pagit.fasta" % name, name, "%s_renamed.fasta" % name)
+    #Here I align reads to this new assembly
     subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
-    os.system("samtools faidx %s_renamed.fasta" % name)
+    #Index renamed.fasta for calling variants
+    os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
     run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
     make_bam("%s.sam" % name, name)
     os.system("java -jar %s/CreateSequenceDictionary.jar R=%s_renamed.fasta O=%s_renamed.dict > /dev/null 2>&1" % (PICARD_PATH, name, name))
@@ -331,12 +338,12 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("java -jar %s/AddOrReplaceReadGroups.jar INPUT=%s_renamed.bam OUTPUT=%s_renamed_header.bam SORT_ORDER=coordinate RGID=%s RGLB=%s RGPL=illumina RGSM=%s RGPU=name CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT > /dev/null 2>&1" % (PICARD_PATH,name,name,name,name,name))
     os.system("echo %s_renamed_header.bam > %s.bam.list" % (name,name))
     os.system("java -jar %s -R %s_renamed.fasta -T DepthOfCoverage -o %s_coverage -I %s.bam.list -rf BadCigar > /dev/null 2>&1" % (GATK_PATH,name,name,name))
-    os.system("samtools index %s_renamed_header.bam" % name)
+    os.system("samtools index %s_renamed_header.bam 2> /dev/null" % name)
     process_coverage(name)
     try:
         to_fix=parse_vcf("%s.gatk.out" % name, coverage, proportion)
         log_isg.logPrint("number of SNPs to fix in %s = %s" % (name,len(to_fix)))
-	if int(len(to_fix))>=1:
+	    if int(len(to_fix))>=1:
             try:
                 fasta_to_tab("%s_renamed.fasta" % name, name)
                 fix_assembly("%s.out.tab" % name, to_fix, name)
@@ -346,28 +353,37 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         else:
             pass
     except:
+        print "couldn't correct SNPs"
+        pass
+    #Runs Pilon, I assume that it runs correctly
+    os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
+	rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
+    try:
+        #Runs Prokka, if it's installed
+        os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s_final_assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name))
+        subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
+    except:
+        print "Prokka was not run, so no annotation files will be included"
+        pass
+    filter_seqs("%s_final_assembly.fasta" % name, keep, name)
+    #filters again by minimum length, output is named %s.%s.spades.assembly.fasta
+    try:
+        subprocess.check_call("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep), shell=True, stderr=open(os.devnull, "w"))
+    except:
+        print "problem fixing missing space"
         pass
     try:
-        os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
-	rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
-        os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s_final_assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name))
-	filter_seqs("%s_final_assembly.fasta" % name, keep, name)
-        try:
-            subprocess.check_call("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep), shell=True, stderr=open(os.devnull, "w"))
-        except:
-            print "problem fixing missing space"
-        try:
-            os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
-        except:
-            print "tried to clean fasta, but cleanfasta not configured correctly, copying unclean fasta"
-            os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
-        os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
-        """new code starts here"""
+        os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
     except:
-        pass
+        print "tried to clean fasta, but cleanfasta not configured correctly, copying unclean fasta"
+    #Copies these files to your output directory, whether or not the previous commands were successful
+    os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
+    os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
+    #I have to re-run bwa on the new assembly, as the contig lengths can change from the original SPAdes assembly
     os.system("bwa index %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,keep))
     run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s.%s.spades.assembly.fasta" % (name,keep))
     make_bam("%s.sam" % name, name)
+    #This is for the per contig coverage routine
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep))
     subprocess.check_call("tr ' ' '\t' < tmp.txt > genome_size.txt", shell=True)
     get_coverage("%s_renamed.bam" % name,"genome_size.txt")
@@ -377,22 +393,17 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     report_stats("results.txt", "%s_renamed_header.bam" % name, name)
     doc("coverage.out", "genome_size.txt", name, coverage)
     os.system("cp %s_%s_depth.txt %s/UGAP_assembly_results" % (name,coverage,start_path))
-    """new code ends here"""
     slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     if "NULL" not in blast_nt:
-        #subprocess.check_call("blastall -p blastn -i %s.chunks.fasta -F F -d %s -o blast.out -e 0.01 -a %s" % (name, blast_nt, processors), shell=True)
         subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out blast.out" % (name, blast_nt, processors), shell=True) 
-        #os.system("perl %s/bin/blast_parse.pl blast.out | sort -u -k 1,1 > %s/UGAP_assembly_results/%s_blast_report.txt" % (UGAP_PATH, start_path, name))
         os.system("cp blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name))
         merge_blast_with_coverages("%s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name), "%s_%s_depth.txt" % (name,coverage))
         os.system("sed 's/ /_/g' depth_blast_merged.txt > tmp.txt")
         os.system("sort -u -k 1,1 tmp.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
         find_missing_coverages("%s_%s_depth.txt" % (name,coverage), "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
         os.system("sort -u -k 1,1 new.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
-    try:
-        subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
-    except:
-        print "tried to copy prokka files, but prokka doesn't appear to be installed"
+    else:
+        print "BLAST not run"
     
 def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,ugap_path,blast_nt):
     UGAP_PATH=ugap_path

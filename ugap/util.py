@@ -10,17 +10,6 @@ import decimal
 import re
 import sys
 
-"""UGAP_PATH must be modified for the install
-location on your machine"""
-#UGAP_PATH="/Users/jsahl/UGAP"
-#sys.path.append('%s' % UGAP_PATH)
-#sys.path.append('%s/share' % UGAP_PATH)
-"""set the paths for all of the java dependencies"""
-#GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
-#PICARD_PATH=UGAP_PATH+"/bin/"
-#TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
-#PILON_PATH=UGAP_PATH+"/bin/pilon-1.5.jar"
-
 def get_readFile_components(full_file_path):
     (file_path,file_name) = os.path.split(full_file_path)
     m1 = re.match("(.*).gz",file_name)
@@ -90,25 +79,19 @@ def get_seq_name(in_fasta):
 
 def get_sequence_length(fastq_in, name):
     os.system("gzip -dc %s > %s.tmp.fastq" % (fastq_in,name))
-    #try:
-    #    os.system("zcat %s | head | split -l 4" % fastq_in)
-    #except:
-    #os.system("gzcat %s | head | split -l 4 > /dev/null 2>&" % fastq_in)
     lines = [ ]
     with open("%s.tmp.fastq" % name, "U") as f:
-    #with open("xaa", "U") as f:
         for line in f.readlines()[1:2]:
             for x in line:
                 lines.append(x)
     length=len(lines)
     os.system("rm -rf %s.tmp.fastq" % name)
-    #os.system("rm xa*")
     return length
 
 def clean_fasta(fasta_in, fasta_out):
     seqrecords=[]
     for record in SeqIO.parse(open(fasta_in, "U"), "fasta"):
-	seqrecords.append(record)
+	    seqrecords.append(record)
     output_handle=open(fasta_out, "w")
     SeqIO.write(seqrecords, output_handle, "fasta")
     output_handle.close()
@@ -252,6 +235,7 @@ def fix_assembly(in_tab, to_fix, name):
     output_handle.close()
 
 def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_path,reduce):
+    #Is this still relevant?
     files_and_temp_names = [(str(idx), list(f))
                             for idx, f in fileSets.iteritems()]
     lock = threading.Lock()
