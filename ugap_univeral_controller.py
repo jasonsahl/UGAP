@@ -85,10 +85,10 @@ cd $PBS_O_WORKDIR
             job_string = """
 #!/bin/bash
 #$ -N %s
-#$ -P drasko-lab
+#$ -P %s
 #$ -l %s
 #$ -cwd
-%s""" % (job_name,memory,command)
+%s""" % (job_name,queue,memory,command)
 
             input.write(job_string)
             input.close()

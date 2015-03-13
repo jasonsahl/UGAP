@@ -47,7 +47,7 @@ def test_truths(option, opt_str, value, parser):
 def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,blast_nt):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
-    dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
+    dependencies = ['bwa','samtools','spades.py','genomeCoverageBed',"blastall"]
     for dependency in dependencies:
         ra = subprocess.check_call('which %s > /dev/null 2>&1' % dependency, shell=True)
         if ra == 0:
