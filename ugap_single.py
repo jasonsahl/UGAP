@@ -260,7 +260,7 @@ def merge_blast_with_coverages(blast_report, coverages):
     for alist in out_list:
         print >> outfile, "\t".join(alist)
 
-def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt):
+def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff):
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
         try:
@@ -294,9 +294,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     #This next section runs spades according to the input parameters
     if error_corrector=="hammer":
         if careful == "T":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
         else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
     elif error_corrector=="musket":
         ab = subprocess.call(['which', 'musket'])
         if ab == 0:
@@ -308,14 +308,14 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
         subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
         if careful == "T":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
         else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
     else:
         if careful == "T":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
         else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
     #finished running spades
     os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     #filters contigs by a user-defined length threshold, defaults to 200nts
@@ -405,7 +405,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     else:
         print "BLAST not run"
     
-def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,ugap_path,blast_nt):
+def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,ugap_path,blast_nt,cov_cutoff):
     UGAP_PATH=ugap_path
     GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
     PICARD_PATH=UGAP_PATH+"/bin/"
@@ -456,14 +456,14 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
         subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce_path, shell=True)
     if "NULL" not in reduce:
         if "NULL" not in blast_nt:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt_path)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt_path, cov_cutoff)
         else:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff)
     else:
         if "NULL" not in blast_nt:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt_path)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt_path, cov_cutoff)
         else:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff)
     os.chdir("%s" % start_path)
     if temp_files == "F":
         os.system("rm -rf %s.work_directory" % name)
@@ -510,6 +510,9 @@ if __name__ == "__main__":
     parser.add_option("-b", "--blast_nt", dest="blast_nt",
                       help="PATH to blast nt database, defaults to NULL",
                       action="store", type="string", default="NULL")
+    parser.add_option("-o", "--cov_cutoff", dest="cov_cutoff",
+                      help="value to pass to SPAdes cov_cutoff option",
+                      action="store", type="string", default="auto")
     options, args = parser.parse_args()
     mandatories = ["forward_read","name","reverse_read","ugap_path"]
     for m in mandatories:
@@ -518,5 +521,6 @@ if __name__ == "__main__":
             parser.print_help()
             exit(-1)
     main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,options.coverage,
-         options.proportion,options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path,options.blast_nt)
+         options.proportion,options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path,options.blast_nt,
+         options.cov_cutoff)
     
