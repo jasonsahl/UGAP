@@ -294,9 +294,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     #This next section runs spades according to the input parameters
     if error_corrector=="hammer":
         if careful == "T":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
         else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
     elif error_corrector=="musket":
         ab = subprocess.call(['which', 'musket'])
         if ab == 0:
@@ -308,14 +308,14 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
         subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
         if careful == "T":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
         else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
     else:
         if careful == "T":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
         else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov_cutoff %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
     #finished running spades
     os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     #filters contigs by a user-defined length threshold, defaults to 200nts
