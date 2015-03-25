@@ -7,12 +7,12 @@ from optparse import OptionParser
 import os
 import sys
 import subprocess
-#try:
-#    from ugap.util import *
-#    from igs.utils import logging as log_isg
-#except:
-#    print "Environment not set correctly, correct ugap_single.py environment"
-#    sys.exit()
+try:
+    from ugap.util import *
+    from igs.utils import logging as log_isg
+except:
+    print "Environment not set correctly, correct ugap_single.py environment"
+    sys.exit()
 import errno
 from subprocess import Popen
 
@@ -210,58 +210,7 @@ def find_missing_coverages(depth, merged):
     outfile = open("new.txt", "w")
     for line in open(depth, "U"):
         fields = line.split()
-        if len(fields)==1:
-            pass
-        else:
-            all_ids.update({fields[0]:fields[1]})
-    for k,v in all_ids.iteritems():
-        hits = []
-        nohits = []
-        for line in open(merged, "U"):
-            fields = line.split()
-            if k == fields[0]:
-                print >> outfile, line,
-                hits.append("1")
-            else:
-                nohits.append("1")
-        allhits = hits + nohits
-        if len(nohits)==len(allhits):
-            print >> outfile, str(k)+"\t"+"no blast hit"+"\t"+str(v)
-    outfile.close()
-               
-def merge_blast_with_coverages(blast_report, coverages):
-    from operator import itemgetter
-    coverage_dict = {}
-    out_list = []
-    outfile = open("depth_blast_merged.txt", "w")
-    for line in open(coverages, "U"):
-        fields = line.split()
-        if len(fields)==1:
-            pass
-        else:
-            coverage_dict.update({fields[0]:fields[1]})
-    for line in open(blast_report, "U"):
-        file_list = []
-        tmp_dict = {}
-        newline = line.strip()
-        if line.startswith("#"):
-            pass
-        else:
-            fields = newline.split("\t")
-            try:
-                tmp_dict[fields[0]].append(fields[12])
-            except KeyError:
-                tmp_dict[fields[0]]=[fields[12]]
-            for k,v in tmp_dict.iteritems():
-                file_list.append(k)
-                file_list.append(v[0])
-            file_list.append(coverage_dict.get(fields[0]))
-            out_list.append(file_list)
-    for alist in out_list:
-        print >> outfile, "\t".join(alist)
-
-def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff):
-    from ugap.util import *
+vfrom ugap.util import *
     from igs.utils import logging as log_isg
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
@@ -419,7 +368,6 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
     else:
         print "your UGAP path is not correct.  Edit the path in ugap_pbs_prep.py and try again"
         sys.exit()
-   
     start_dir = os.getcwd()
     start_path = os.path.abspath("%s" % start_dir)
     forward_path = os.path.abspath("%s" % forward_read)
