@@ -210,8 +210,6 @@ def find_missing_coverages(depth, merged):
     outfile = open("new.txt", "w")
     for line in open(depth, "U"):
         fields = line.split()
-vfrom ugap.util import *
-    from igs.utils import logging as log_isg
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
         try:
