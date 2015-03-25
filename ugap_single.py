@@ -7,12 +7,12 @@ from optparse import OptionParser
 import os
 import sys
 import subprocess
-try:
-    from ugap.util import *
-    from igs.utils import logging as log_isg
-except:
-    print "Environment not set correctly, correct ugap_single.py environment"
-    sys.exit()
+#try:
+#    from ugap.util import *
+#    from igs.utils import logging as log_isg
+#except:
+#    print "Environment not set correctly, correct ugap_single.py environment"
+#    sys.exit()
 import errno
 from subprocess import Popen
 
@@ -417,6 +417,8 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
     else:
         print "your UGAP path is not correct.  Edit the path in ugap_pbs_prep.py and try again"
         sys.exit()
+    from ugap.util import *
+    from igs.utils import logging as log_isg
     start_dir = os.getcwd()
     start_path = os.path.abspath("%s" % start_dir)
     forward_path = os.path.abspath("%s" % forward_read)
