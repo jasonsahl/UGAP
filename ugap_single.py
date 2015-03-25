@@ -261,6 +261,8 @@ def merge_blast_with_coverages(blast_report, coverages):
         print >> outfile, "\t".join(alist)
 
 def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff):
+    from ugap.util import *
+    from igs.utils import logging as log_isg
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
         try:
@@ -417,8 +419,7 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
     else:
         print "your UGAP path is not correct.  Edit the path in ugap_pbs_prep.py and try again"
         sys.exit()
-    from ugap.util import *
-    from igs.utils import logging as log_isg
+   
     start_dir = os.getcwd()
     start_path = os.path.abspath("%s" % start_dir)
     forward_path = os.path.abspath("%s" % forward_read)
