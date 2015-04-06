@@ -54,8 +54,9 @@ def send_jobs(datasets,my_mem,controller,queue):
 #SBATCH -p %s
 #SBATCH -J %s
 #SBATCH -c %s
+#SBATCH --time %s
 #SBATCH  --mem=%s
-%s""" % (queue, job_name, data[9], my_mem, command)
+%s""" % (queue, job_name, data[9], walltime, my_mem, command)
 
             input.write(job_string)
             input.close()
