@@ -309,7 +309,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
     else:
-        run_trimmomatic(TRIM_PATH,forward_path, reverse_path, name, UGAP_PATH, length)
+        run_trimmomatic(TRIM_PATH, processors, forward_path, reverse_path, name, UGAP_PATH, length)
     #This next section runs spades according to the input parameters
     if error_corrector=="hammer":
         if careful == "T":
