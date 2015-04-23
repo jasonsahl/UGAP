@@ -229,11 +229,12 @@ def find_missing_coverages(depth, merged):
             print >> outfile, str(k)+"\t"+"no blast hit"+"\t"+str(v)
     outfile.close()
                
-def merge_blast_with_coverages(blast_report, coverages):
+def merge_blast_with_coverages(blast_report, coverages, lengths):
     from operator import itemgetter
     coverage_dict = {}
     out_list = []
     outfile = open("depth_blast_merged.txt", "w")
+    #dictionary contains contig:coverage
     for line in open(coverages, "U"):
         fields = line.split()
         if len(fields)==1:
@@ -242,27 +243,45 @@ def merge_blast_with_coverages(blast_report, coverages):
             coverage_dict.update({fields[0]:fields[1]})
     for line in open(blast_report, "U"):
         file_list = []
-        tmp_dict = {}
+        #tmp_dict = {}
         newline = line.strip()
+        results_list = []
         if line.startswith("#"):
             pass
         else:
             fields = newline.split("\t")
-            try:
-                tmp_dict[fields[0]].append(fields[12])
-            except KeyError:
-                tmp_dict[fields[0]]=[fields[12]]
-            for k,v in tmp_dict.iteritems():
-                file_list.append(k)
-                file_list.append(v[0])
-            file_list.append(coverage_dict.get(fields[0]))
-            out_list.append(file_list)
+            single_line_list = []
+            single_list.append(fields[0])
+            single_list.append(fields[12])
+            single_list.append(fields[10])
+            single_list.append(lengths.get(fields[0]))
+            single_list.append(coverage_dict.get(fields[0]))
+            #try:
+            #    tmp_dict[fields[0]].append(fields[12])
+            #except KeyError:
+            #    tmp_dict[fields[0]]=[fields[12]]
+            #for k,v in tmp_dict.iteritems():
+            #    file_list.append(k)
+            #    file_list.append(v[0])
+            #file_list.append(coverage_dict.get(fields[0]))
+            out_list.append(single_list)
     for alist in out_list:
         print >> outfile, "\t".join(alist)
+
+def get_contig_lengths(in_fasta):
+    length_dict = {}
+    for record in SeqIO.parse(open(in_fasta, "U"), "fasta"):
+       length_dict.update({record.id:len(record.seq)})
+    return length_dict
 
 def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff):
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
+        rv = subprocess.call(['which', 'bam2fastq'])
+        if rx == 0:
+            pass
+        else:
+            print "to deplete reads, you need to have bam2fastq installed. Reads will not be depleted"
         try:
             run_bwa("%s" % forward_path, "%s" % reverse_path, processors, name,"%s" % reduce)
             os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
@@ -290,7 +309,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
     else:
-        run_trimmomatic(TRIM_PATH, processors, forward_path, reverse_path, name, UGAP_PATH, length)
+        run_trimmomatic(TRIM_PATH,forward_path, reverse_path, name, UGAP_PATH, length)
     #This next section runs spades according to the input parameters
     if error_corrector=="hammer":
         if careful == "T":
@@ -320,7 +339,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     #filters contigs by a user-defined length threshold, defaults to 200nts
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
-    os.system("%s/bin/psi-cd-hit.pl -i %s.%s.spades.assembly.fasta -o %s.%s.nr.spades.assembly.fasta -c 0.99999999 -G 1 -g 1 -prog blastn -exec local -l 500" % (UGAP_PATH,name,keep,name,keep))
     #This uses biopython to pretty up the sequences, but not sure it would affect downstream usability
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
     #Cleans up the names for downstream apps
@@ -339,6 +357,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("java -jar %s -R %s_renamed.fasta -T DepthOfCoverage -o %s_coverage -I %s.bam.list -rf BadCigar > /dev/null 2>&1" % (GATK_PATH,name,name,name))
     os.system("samtools index %s_renamed_header.bam 2> /dev/null" % name)
     process_coverage(name)
+    #This next routine tries to fix SNPs if they are identified. Could be redundant with Pilon
     try:
         to_fix=parse_vcf("%s.gatk.out" % name, coverage, proportion)
         log_isg.logPrint("number of SNPs to fix in %s = %s" % (name,len(to_fix)))
@@ -394,9 +413,13 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("cp %s_%s_depth.txt %s/UGAP_assembly_results" % (name,coverage,start_path))
     slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     if "NULL" not in blast_nt:
+        lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
         subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out blast.out" % (name, blast_nt, processors), shell=True) 
         os.system("cp blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name))
-        merge_blast_with_coverages("%s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name), "%s_%s_depth.txt" % (name,coverage))
+        os.system("sort -u -k 1,1 blast.out > blast.uniques")
+        #merge_blast_with_coverages("%s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name), "%s_%s_depth.txt" % (name,coverage))
+        #Above function slightly changed
+        merge_blast_with_coverage("blast.uniques", "%s_%s_depth.txt" % (name,coverage), lengths)
         os.system("sed 's/ /_/g' depth_blast_merged.txt > tmp.txt")
         os.system("sort -u -k 1,1 tmp.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
         find_missing_coverages("%s_%s_depth.txt" % (name,coverage), "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
@@ -442,7 +465,7 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
     else:
         pass
     #I need to remove this blastall dependency
-    dependencies = ['bwa','samtools','spades.py','genomeCoverageBed','blastall']
+    dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
     if "NULL" not in blast_nt:
         rx = subprocess.call(['which', 'blastn'])
         if rx == 0:
