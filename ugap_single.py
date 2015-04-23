@@ -245,12 +245,12 @@ def merge_blast_with_coverages(blast_report, coverages, lengths):
         file_list = []
         #tmp_dict = {}
         newline = line.strip()
-        results_list = []
+        out_list = []
         if line.startswith("#"):
             pass
         else:
             fields = newline.split("\t")
-            single_line_list = []
+            single_list = []
             single_list.append(fields[0])
             single_list.append(fields[12])
             single_list.append(fields[10])
