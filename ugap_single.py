@@ -411,6 +411,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     report_stats("results.txt", "%s_renamed_header.bam" % name, name)
     doc("coverage.out", "genome_size.txt", name, coverage)
     os.system("cp %s_%s_depth.txt %s/UGAP_assembly_results" % (name,coverage,start_path))
+    sum_totals("%s_%s_depth.txt" % (name,coverage), name, "%s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
     slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     if "NULL" not in blast_nt:
         lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))

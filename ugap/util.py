@@ -211,6 +211,18 @@ def rename_multifasta(fasta_in, prefix, fasta_out):
         print >> handle, record.seq
     handle.close()
 
+def sum_totals(input, name, output):
+    outfile = open(output, "w")
+    coverages = []
+    for line in open(input, "U"):
+        fields = line.split()
+        if len(fields)<2:
+            pass
+        else:
+            coverages.append(float(fields[1]))
+    print >> outfile, name, sum(coverages)/len(coverages)
+    outfile.close()
+    
 def process_coverage(name):
     curr_dir= os.getcwd()
     outfile = open("coverage_out.txt", "a")
