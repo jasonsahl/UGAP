@@ -354,9 +354,11 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     """run_bam_coverage stuff here"""
     os.system("java -jar %s/AddOrReplaceReadGroups.jar INPUT=%s_renamed.bam OUTPUT=%s_renamed_header.bam SORT_ORDER=coordinate RGID=%s RGLB=%s RGPL=illumina RGSM=%s RGPU=name CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT > /dev/null 2>&1" % (PICARD_PATH,name,name,name,name,name))
     os.system("echo %s_renamed_header.bam > %s.bam.list" % (name,name))
+    #This is redundant with per contig coverages discussed below
     os.system("java -jar %s -R %s_renamed.fasta -T DepthOfCoverage -o %s_coverage -I %s.bam.list -rf BadCigar > /dev/null 2>&1" % (GATK_PATH,name,name,name))
     os.system("samtools index %s_renamed_header.bam 2> /dev/null" % name)
     process_coverage(name)
+    #end of potentially redundant code
     #This next routine tries to fix SNPs if they are identified. Could be redundant with Pilon
     try:
         to_fix=parse_vcf("%s.gatk.out" % name, coverage, proportion)
@@ -390,10 +392,8 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     except:
         print "problem fixing missing space"
         pass
-    try:
-        os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
-    except:
-        print "tried to clean fasta, but cleanfasta not configured correctly, copying unclean fasta"
+    #os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
+    clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s/UGAP_assembly_results/%s_final_assembly.fasta" % (start_path,name))
     #Copies these files to your output directory, whether or not the previous commands were successful
     os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
     os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))

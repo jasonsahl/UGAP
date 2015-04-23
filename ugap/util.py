@@ -141,6 +141,20 @@ def make_bam(in_sam, name):
     subprocess.check_call("samtools index %s_renamed.bam" % name, shell=True)
     subprocess.check_call("rm %s.1.bam %s.2.bam %s.3.bam" % (name,name,name), shell=True)
 
+def sequence_cleaner(fasta_file,min_length=0,por_n=100):
+    sequences={}
+    for seq_record in SeqIO.parse(fasta_file, "fasta"):
+        sequence=str(seq_record.seq).upper()
+        if (len(sequence)>=min_length and (float(sequence.count("N"))/float(len(sequence)))*100<=por_n):
+            if sequence not in sequences:
+                sequences[sequence]=seq_record.id
+            else:
+                sequences[sequence]+="_"+seq_record.id
+    output_file=open("clear_"+fasta_file,"w+")
+    for sequence in sequences:
+            output_file.write(">"+sequences[sequence]+"\n"+sequence+"\n")
+    output_file.close()
+ 
 def run_gatk(reference, processors, name, gatk):
     args = ['java', '-jar', '%s' % gatk, '-T', 'UnifiedGenotyper',
             '-R', '%s' % reference, '-nt', '%s' % processors,'-S', 'silent',
