@@ -320,12 +320,11 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     #filters contigs by a user-defined length threshold, defaults to 200nts
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
-    #Calls an exterior script to de-replicate assemblies, can I come up with a better method?
     os.system("%s/bin/psi-cd-hit.pl -i %s.%s.spades.assembly.fasta -o %s.%s.nr.spades.assembly.fasta -c 0.99999999 -G 1 -g 1 -prog blastn -exec local -l 500" % (UGAP_PATH,name,keep,name,keep))
     #This uses biopython to pretty up the sequences, but not sure it would affect downstream usability
-    clean_fasta("%s.%s.nr.spades.assembly.fasta" % (name,keep),"%s_pagit.fasta" % name)
+    clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
     #Cleans up the names for downstream apps
-    rename_multifasta("%s_pagit.fasta" % name, name, "%s_renamed.fasta" % name)
+    rename_multifasta("%s_cleaned.fasta" % name, name, "%s_renamed.fasta" % name)
     #Here I align reads to this new assembly
     subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
     #Index renamed.fasta for calling variants
@@ -353,7 +352,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         else:
             pass
     except:
-        print "couldn't correct SNPs"
+        print "couldn't correct SNPs, likely due to a GATK error"
         pass
     #Runs Pilon, I assume that it runs correctly
     os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
@@ -442,7 +441,14 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
             sys.exit()
     else:
         pass
-    dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
+    #I need to remove this blastall dependency
+    dependencies = ['bwa','samtools','spades.py','genomeCoverageBed','blastall']
+    if "NULL" not in blast_nt:
+        rx = subprocess.call(['which', 'blastn'])
+        if rx == 0:
+            pass
+        else:
+            print "you asked to use a blastdb, but you don't have blastn in your PATH. Expect errors!"
     for dependency in dependencies:
         ra = subprocess.call(['which', '%s' % dependency])
         if ra == 0:
