@@ -243,9 +243,8 @@ def merge_blast_with_coverages(blast_report, coverages, lengths):
             coverage_dict.update({fields[0]:fields[1]})
     for line in open(blast_report, "U"):
         file_list = []
-        #tmp_dict = {}
         newline = line.strip()
-        out_list = []
+        #out_list = []
         if line.startswith("#"):
             pass
         else:
@@ -256,15 +255,8 @@ def merge_blast_with_coverages(blast_report, coverages, lengths):
             single_list.append(fields[10])
             single_list.append(lengths.get(fields[0]))
             single_list.append(coverage_dict.get(fields[0]))
-            #try:
-            #    tmp_dict[fields[0]].append(fields[12])
-            #except KeyError:
-            #    tmp_dict[fields[0]]=[fields[12]]
-            #for k,v in tmp_dict.iteritems():
-            #    file_list.append(k)
-            #    file_list.append(v[0])
-            #file_list.append(coverage_dict.get(fields[0]))
             out_list.append(single_list)
+            
     for alist in out_list:
         print >> outfile, "\t".join(alist)
 
