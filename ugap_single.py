@@ -250,11 +250,11 @@ def merge_blast_with_coverages(blast_report, coverages, lengths):
         else:
             fields = newline.split("\t")
             single_list = []
-            single_list.append(fields[0])
-            single_list.append(fields[12])
-            single_list.append(fields[10])
-            single_list.append(lengths.get(fields[0]))
-            single_list.append(coverage_dict.get(fields[0]))
+            single_list.append(str(fields[0]))
+            single_list.append(str(fields[12]))
+            single_list.append(str(fields[10]))
+            single_list.append(str(lengths.get(fields[0])))
+            single_list.append(str(coverage_dict.get(fields[0])))
             out_list.append(single_list)
             
     for alist in out_list:
@@ -407,6 +407,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     if "NULL" not in blast_nt:
         lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
+        print lengths
         subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out blast.out" % (name, blast_nt, processors), shell=True) 
         os.system("cp blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name))
         os.system("sort -u -k 1,1 blast.out > blast.uniques")
