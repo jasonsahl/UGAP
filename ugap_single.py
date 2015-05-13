@@ -226,7 +226,7 @@ def find_missing_coverages(depth, merged, lengths):
                 nohits.append("1")
         allhits = hits + nohits
         if len(nohits)==len(allhits):
-            print >> outfile, str(k)+"\t"+"N/A"+"\t"+"no blast hit"+"\t"+str(lengths.get(k))+"\t"+str(v)
+            print >> outfile, str(k)+"\t"+"N/A"+"\t"+"no_blast_hit"+"\t"+str(lengths.get(k))+"\t"+str(v)
     outfile.close()
                
 def merge_blast_with_coverages(blast_report, coverages, lengths):
