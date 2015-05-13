@@ -226,7 +226,7 @@ def find_missing_coverages(depth, merged, lengths):
                 nohits.append("1")
         allhits = hits + nohits
         if len(nohits)==len(allhits):
-            print >> outfile, str(k)+"\t"+"no blast hit"+"\t"+str(lengths.get(k))+"\t"+str(v)
+            print >> outfile, str(k)+"\t"+"N/A"+"\t"+"no blast hit"+"\t"+str(lengths.get(k))+"\t"+str(v)
     outfile.close()
                
 def merge_blast_with_coverages(blast_report, coverages, lengths):
@@ -411,13 +411,11 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out blast.out" % (name, blast_nt, processors), shell=True) 
         os.system("cp blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name))
         os.system("sort -u -k 1,1 blast.out > blast.uniques")
-        #merge_blast_with_coverages("%s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name), "%s_%s_depth.txt" % (name,coverage))
-        #Above function slightly changed
         merge_blast_with_coverages("blast.uniques", "%s_%s_depth.txt" % (name,coverage), lengths)
         os.system("sed 's/ /_/g' depth_blast_merged.txt > tmp.txt")
         os.system("sort -u -k 1,1 tmp.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
         find_missing_coverages("%s_%s_depth.txt" % (name,coverage), "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths)
-        os.system("sort -u -k 1,1 new.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
+        os.system("sort -u -k 1,1 new.txt | sort -gr -k 5,5 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name))
     else:
         print "BLAST not run"
     
