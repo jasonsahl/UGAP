@@ -9,13 +9,13 @@ __maintainer__ = "Jason Sahl"
 __email__ = "jsahl@tgen.org"
 __status__ = "Development"
  
-long_description = """Ultimate Genome
+long_description = """Unnamed Genome
 Assembly Pipeline
 """
 
 setup(name='UGAP',
       version=__version__,
-      description='Large scale blast score ratio',
+      description='UGAP',
       author=__maintainer__,
       author_email=__email__,
       maintainer=__maintainer__,

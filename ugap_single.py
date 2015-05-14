@@ -271,21 +271,14 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         #Reads will be depleted in relation to a given reference
         rv = subprocess.call(['which', 'bam2fastq'])
         if rx == 0:
-            pass
-        else:
-            print "to deplete reads, you need to have bam2fastq installed. Reads will not be depleted"
-        try:
             run_bwa("%s" % forward_path, "%s" % reverse_path, processors, name,"%s" % reduce)
             os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
             os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > reduce_results.txt" % (name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
             os.system("cp %s_1.fastq.gz %s" % (name,forward_path))
             os.system("cp %s_2.fastq.gz %s" % (name,reverse_path))
-        except:
-            print "problems depleting reads"
-            sys.exit()
-    else:
-        pass
+        else:
+            print "to deplete reads, you need to have bam2fastq installed. Reads will not be depleted"
     if int(get_sequence_length(forward_path, name))<=200 and int(get_sequence_length(forward_path, name))>=100:
         #Uses default K values, based on SPADes recs
         ks = "21,33,55,77"
@@ -315,6 +308,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         else:
             print "musket isn't in your path, but needs to be!"
             sys.exit()
+        #Need to test again with Musket
         subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
         subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
         subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
@@ -327,7 +321,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
         else:
             subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-    #finished running spades
     os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     #filters contigs by a user-defined length threshold, defaults to 200nts
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
@@ -335,60 +328,60 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
     #Cleans up the names for downstream apps
     rename_multifasta("%s_cleaned.fasta" % name, name, "%s_renamed.fasta" % name)
+    """This section is actively being removed"""
     #Here I align reads to this new assembly
-    subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
+    #subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
     #Index renamed.fasta for calling variants
-    os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
-    run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
-    make_bam("%s.sam" % name, name)
-    os.system("java -jar %s/CreateSequenceDictionary.jar R=%s_renamed.fasta O=%s_renamed.dict > /dev/null 2>&1" % (PICARD_PATH, name, name))
-    run_gatk("%s_renamed.fasta" % name, processors, name, "%s" % GATK_PATH)
+    #os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
+    #run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
+    #make_bam("%s.sam" % name, name)
+    #os.system("java -jar %s/CreateSequenceDictionary.jar R=%s_renamed.fasta O=%s_renamed.dict > /dev/null 2>&1" % (PICARD_PATH, name, name))
+    #run_gatk("%s_renamed.fasta" % name, processors, name, "%s" % GATK_PATH)
     """run_bam_coverage stuff here"""
-    os.system("java -jar %s/AddOrReplaceReadGroups.jar INPUT=%s_renamed.bam OUTPUT=%s_renamed_header.bam SORT_ORDER=coordinate RGID=%s RGLB=%s RGPL=illumina RGSM=%s RGPU=name CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT > /dev/null 2>&1" % (PICARD_PATH,name,name,name,name,name))
-    os.system("echo %s_renamed_header.bam > %s.bam.list" % (name,name))
+    #os.system("java -jar %s/AddOrReplaceReadGroups.jar INPUT=%s_renamed.bam OUTPUT=%s_renamed_header.bam SORT_ORDER=coordinate RGID=%s RGLB=%s RGPL=illumina RGSM=%s RGPU=name CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT > /dev/null 2>&1" % (PICARD_PATH,name,name,name,name,name))
+    #os.system("echo %s_renamed_header.bam > %s.bam.list" % (name,name))
     #This is redundant with per contig coverages discussed below
-    os.system("java -jar %s -R %s_renamed.fasta -T DepthOfCoverage -o %s_coverage -I %s.bam.list -rf BadCigar > /dev/null 2>&1" % (GATK_PATH,name,name,name))
-    os.system("samtools index %s_renamed_header.bam 2> /dev/null" % name)
-    process_coverage(name)
+    #os.system("java -jar %s -R %s_renamed.fasta -T DepthOfCoverage -o %s_coverage -I %s.bam.list -rf BadCigar > /dev/null 2>&1" % (GATK_PATH,name,name,name))
+    #os.system("samtools index %s_renamed_header.bam 2> /dev/null" % name)
+    #process_coverage(name)
     #end of potentially redundant code
     #This next routine tries to fix SNPs if they are identified. Could be redundant with Pilon
-    try:
-        to_fix=parse_vcf("%s.gatk.out" % name, coverage, proportion)
-        log_isg.logPrint("number of SNPs to fix in %s = %s" % (name,len(to_fix)))
-        if int(len(to_fix))>=1:
-            try:
-                fasta_to_tab("%s_renamed.fasta" % name, name)
-                fix_assembly("%s.out.tab" % name, to_fix, name)
-                os.system("cp %s_corrected_assembly.fasta %s_renamed.fasta" % (name,name))
-            except:
-                print "error correction failed for some reason"
-        else:
-            pass
-    except:
-        print "couldn't correct SNPs, likely due to a GATK error"
-        pass
+    #try:
+    #    to_fix=parse_vcf("%s.gatk.out" % name, coverage, proportion)
+    #    log_isg.logPrint("number of SNPs to fix in %s = %s" % (name,len(to_fix)))
+    #    if int(len(to_fix))>=1:
+    #        try:
+    #            fasta_to_tab("%s_renamed.fasta" % name, name)
+    #            fix_assembly("%s.out.tab" % name, to_fix, name)
+    #            os.system("cp %s_corrected_assembly.fasta %s_renamed.fasta" % (name,name))
+    #        except:
+    #            print "error correction failed for some reason"
+    #    else:
+    #        pass
+    #except:
+    #    print "couldn't correct SNPs, likely due to a GATK error"
+    #    pass
     #Runs Pilon, I assume that it runs correctly
     os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
     rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
-    try:
-        #Runs Prokka, if it's installed
-        os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s_final_assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name))
-        subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
-    except:
-        print "Prokka was not run, so no annotation files will be included"
-        pass
     filter_seqs("%s_final_assembly.fasta" % name, keep, name)
     #filters again by minimum length, output is named %s.%s.spades.assembly.fasta
     try:
         subprocess.check_call("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep), shell=True, stderr=open(os.devnull, "w"))
     except:
-        print "problem fixing missing space"
+        print "problem fixing missing spaces"
         pass
-    #os.system("%s/cleanFasta.pl %s.%s.spades.assembly.fasta -o %s/UGAP_assembly_results/%s_final_assembly.fasta > /dev/null 2>&1" % (PICARD_PATH,name,keep,start_path,name))
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s/UGAP_assembly_results/%s_final_assembly.fasta" % (start_path,name))
+    try:
+        #Runs Prokka, if it's installed
+        os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name,keep))
+        subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
+    except:
+        print "Prokka was not run, so no annotation files will be included"
+        pass
     #Copies these files to your output directory, whether or not the previous commands were successful
     os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
-    os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
+    #os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
     #I have to re-run bwa on the new assembly, as the contig lengths can change from the original SPAdes assembly
     os.system("bwa index %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,keep))
     run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s.%s.spades.assembly.fasta" % (name,keep))
@@ -404,8 +397,8 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     doc("coverage.out", "genome_size.txt", name, coverage)
     os.system("cp %s_%s_depth.txt %s/UGAP_assembly_results" % (name,coverage,start_path))
     sum_totals("%s_%s_depth.txt" % (name,coverage), name, "%s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
-    slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
     if "NULL" not in blast_nt:
+        slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
         lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
         print lengths
         subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out blast.out" % (name, blast_nt, processors), shell=True) 
@@ -425,7 +418,7 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
     #updated to 1.12 on May 12, 2015
-    PILON_PATH=UGAP_PATH+"/bin/pilon-1.10.jar"
+    PILON_PATH=UGAP_PATH+"/bin/pilon-1.12.jar"
     if os.path.exists(UGAP_PATH):
         sys.path.append("%s" % UGAP_PATH)
     else:
@@ -456,7 +449,6 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
             sys.exit()
     else:
         pass
-    #I need to remove this blastall dependency
     dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
     if "NULL" not in blast_nt:
         rx = subprocess.call(['which', 'blastn'])
@@ -477,14 +469,14 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
         subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce_path, shell=True)
     if "NULL" not in reduce:
         if "NULL" not in blast_nt:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt_path, cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt_path,cov_cutoff)
         else:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt,cov_cutoff)
     else:
         if "NULL" not in blast_nt:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt_path, cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt_path,cov_cutoff)
         else:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt,cov_cutoff)
     os.chdir("%s" % start_path)
     if temp_files == "F":
         os.system("rm -rf %s.work_directory" % name)
