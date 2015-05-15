@@ -330,11 +330,11 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     rename_multifasta("%s_cleaned.fasta" % name, name, "%s_renamed.fasta" % name)
     """This section is actively being removed"""
     #Here I align reads to this new assembly
-    #subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
+    subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
     #Index renamed.fasta for calling variants
-    #os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
-    #run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
-    #make_bam("%s.sam" % name, name)
+    os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
+    run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
+    make_bam("%s.sam" % name, name)
     #os.system("java -jar %s/CreateSequenceDictionary.jar R=%s_renamed.fasta O=%s_renamed.dict > /dev/null 2>&1" % (PICARD_PATH, name, name))
     #run_gatk("%s_renamed.fasta" % name, processors, name, "%s" % GATK_PATH)
     """run_bam_coverage stuff here"""
