@@ -35,7 +35,7 @@ def parse_config_file(config_file):
             pass
         else:
             fields = line.split()
-            datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10]),)+datasets
+            datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10],fields[11]),)+datasets
     return datasets
 
 def send_jobs(datasets,my_mem,controller,queue):
@@ -46,7 +46,7 @@ def send_jobs(datasets,my_mem,controller,queue):
             output, input = popen2('qsub')
         job_name = "UGAP_%s" % data[0]
         walltime = "48:00:00"
-        command = "python %s/ugap_single.py -n %s -f %s -v %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10])
+        command = "python %s/ugap_single.py -n %s -f %s -v %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11])
         if controller == "slurm":
             memory = "mem=%s" % my_mem
             job_string = \
