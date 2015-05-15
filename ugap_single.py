@@ -296,31 +296,34 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     else:
         run_trimmomatic(TRIM_PATH, processors, forward_path, reverse_path, name, UGAP_PATH, length)
     #This next section runs spades according to the input parameters
-    if error_corrector=="hammer":
-        if careful == "T":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-        else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-    elif error_corrector=="musket":
-        ab = subprocess.call(['which', 'musket'])
-        if ab == 0:
-            pass
-        else:
-            print "musket isn't in your path, but needs to be!"
-            sys.exit()
-        #Need to test again with Musket
-        subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
-        subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
-        subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
-        if careful == "T":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-        else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+    if os.path.isfile("%s.spades.assembly.fasta" % name):
+        pass
     else:
-        if careful == "T":
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+        if error_corrector=="hammer":
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+        elif error_corrector=="musket":
+            ab = subprocess.call(['which', 'musket'])
+            if ab == 0:
+                pass
+            else:
+                print "musket isn't in your path, but needs to be!"
+                sys.exit()
+            #Need to test again with Musket
+            subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
+            subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
+            subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
         else:
-            subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
     os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     #filters contigs by a user-defined length threshold, defaults to 200nts
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
@@ -362,7 +365,12 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     #    print "couldn't correct SNPs, likely due to a GATK error"
     #    pass
     #Runs Pilon, I assume that it runs correctly
-    os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
+    print "running Pilon"
+    try:
+        os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
+    except:
+        print "problem running Pilon. Exiting...."
+        sys.exit()
     rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
     filter_seqs("%s_final_assembly.fasta" % name, keep, name)
     #filters again by minimum length, output is named %s.%s.spades.assembly.fasta
