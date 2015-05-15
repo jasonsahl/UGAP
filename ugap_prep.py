@@ -56,7 +56,7 @@ def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,pr
             print "%s is not in your path, but needs to be!" % dependency
             sys.exit()
     for k,v in fileSets.iteritems():
-        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(coverage)+"\t"+str(proportion)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)
+        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)
     
 if __name__ == "__main__":
     usage="usage: %prog [options]"
@@ -70,12 +70,6 @@ if __name__ == "__main__":
     parser.add_option("-k", "--keep", dest="keep",
                       help="minimum length of contigs to keep, defaults to 200",
                       default="200", type="int")
-    parser.add_option("-c", "--coverage", dest="coverage",
-                      help="minimum coverage required for correcting SNPs, defaults to 3",
-                      default="3", type="int")
-    parser.add_option("-i", "--proportion", dest="proportion",
-                      help="minimum required proportion, defaults to 0.9",
-                      action="store", type="float", default="0.9")
     parser.add_option("-t", "--temp_files", dest="temp_files",
                       help="Keep temp files? Defaults to F",
                       action="callback", callback=test_truths, type="string", default="F")
@@ -103,5 +97,5 @@ if __name__ == "__main__":
             parser.print_help()
             exit(-1)
 
-    main(options.directory,options.error_corrector,options.keep,options.coverage,options.proportion,options.temp_files,
+    main(options.directory,options.error_corrector,options.keep,options.temp_files,
          options.reduce,options.processors,options.careful,options.blast_nt,options.cov_cutoff)
