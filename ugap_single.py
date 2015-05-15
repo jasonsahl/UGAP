@@ -324,7 +324,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
                 subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
             else:
                 subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-    os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
+        os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     #filters contigs by a user-defined length threshold, defaults to 200nts
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
     #This uses biopython to pretty up the sequences, but not sure it would affect downstream usability
@@ -367,6 +367,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     #Runs Pilon, I assume that it runs correctly
     print "running Pilon"
     try:
+        print "java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon"  % (PILON_PATH,processors,name,name,name)"
         os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed_header.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
     except:
         print "problem running Pilon. Exiting...."
