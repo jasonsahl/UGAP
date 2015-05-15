@@ -56,7 +56,7 @@ def send_jobs(datasets,my_mem,controller,queue):
 #SBATCH -c %s
 #SBATCH --time %s
 #SBATCH  --mem=%s
-%s""" % (queue, job_name, data[9], walltime, my_mem, command)
+%s""" % (queue, job_name, data[6], walltime, my_mem, command)
 
             input.write(job_string)
             input.close()
@@ -65,7 +65,7 @@ def send_jobs(datasets,my_mem,controller,queue):
             print output.read()
         elif controller == "torque":
             memory = "mem=%s" % my_mem
-            processors = "nodes=1:ppn=%s" % data[9]
+            processors = "nodes=1:ppn=%s" % data[6]
             job_string = """#!/bin/bash
 #PBS -N %s
 #PBS -l walltime=%s
