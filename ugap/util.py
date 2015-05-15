@@ -88,6 +88,12 @@ def get_sequence_length(fastq_in, name):
     os.system("rm -rf %s.tmp.fastq" % name)
     return length
 
+def get_sequence_length_dev(fastq_in, name):
+    length = []
+    for record in SeqIO.parse(open(fastq_in, "U"), "fastq")[0:1]:
+        length.append(len(record.seq))
+    return length
+
 def clean_fasta(fasta_in, fasta_out):
     seqrecords=[]
     for record in SeqIO.parse(open(fasta_in, "U"), "fasta"):

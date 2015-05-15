@@ -266,7 +266,7 @@ def get_contig_lengths(in_fasta):
        length_dict.update({record.id:len(record.seq)})
     return length_dict
 
-def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff):
+def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,proportion,start_path,reduce,careful,UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff):
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
         rv = subprocess.call(['which', 'bam2fastq'])
@@ -338,33 +338,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
     run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
     make_bam("%s.sam" % name, name)
-    #os.system("java -jar %s/CreateSequenceDictionary.jar R=%s_renamed.fasta O=%s_renamed.dict > /dev/null 2>&1" % (PICARD_PATH, name, name))
-    #run_gatk("%s_renamed.fasta" % name, processors, name, "%s" % GATK_PATH)
-    """run_bam_coverage stuff here"""
-    #os.system("java -jar %s/AddOrReplaceReadGroups.jar INPUT=%s_renamed.bam OUTPUT=%s_renamed_header.bam SORT_ORDER=coordinate RGID=%s RGLB=%s RGPL=illumina RGSM=%s RGPU=name CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT > /dev/null 2>&1" % (PICARD_PATH,name,name,name,name,name))
-    #os.system("echo %s_renamed_header.bam > %s.bam.list" % (name,name))
-    #This is redundant with per contig coverages discussed below
-    #os.system("java -jar %s -R %s_renamed.fasta -T DepthOfCoverage -o %s_coverage -I %s.bam.list -rf BadCigar > /dev/null 2>&1" % (GATK_PATH,name,name,name))
-    #os.system("samtools index %s_renamed_header.bam 2> /dev/null" % name)
-    #process_coverage(name)
-    #end of potentially redundant code
-    #This next routine tries to fix SNPs if they are identified. Could be redundant with Pilon
-    #try:
-    #    to_fix=parse_vcf("%s.gatk.out" % name, coverage, proportion)
-    #    log_isg.logPrint("number of SNPs to fix in %s = %s" % (name,len(to_fix)))
-    #    if int(len(to_fix))>=1:
-    #        try:
-    #            fasta_to_tab("%s_renamed.fasta" % name, name)
-    #            fix_assembly("%s.out.tab" % name, to_fix, name)
-    #            os.system("cp %s_corrected_assembly.fasta %s_renamed.fasta" % (name,name))
-    #        except:
-    #            print "error correction failed for some reason"
-    #    else:
-    #        pass
-    #except:
-    #    print "couldn't correct SNPs, likely due to a GATK error"
-    #    pass
-    #Runs Pilon, I assume that it runs correctly
     print "running Pilon"
     try:
         print "java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed.bam --output %s_pilon" % (PILON_PATH,processors,name,name,name)
@@ -390,12 +363,11 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         pass
     #Copies these files to your output directory, whether or not the previous commands were successful
     os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
-    #os.system("cp coverage_out.txt %s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
     #I have to re-run bwa on the new assembly, as the contig lengths can change from the original SPAdes assembly
     os.system("bwa index %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,keep))
     run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s.%s.spades.assembly.fasta" % (name,keep))
     make_bam("%s.sam" % name, name)
-    #This is for the per contig coverage routine
+    #This is for the per contig coverage routine. I have to re-run BWA because I renamed contigs and potentially the numbers don't match
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep))
     subprocess.check_call("tr ' ' '\t' < tmp.txt > genome_size.txt", shell=True)
     get_coverage("%s_renamed.bam" % name,"genome_size.txt")
@@ -420,7 +392,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     else:
         print "BLAST not run"
     
-def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,ugap_path,blast_nt,cov_cutoff):
+def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,processors,careful,ugap_path,blast_nt,cov_cutoff):
     UGAP_PATH=ugap_path
     GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
     PICARD_PATH=UGAP_PATH+"/bin/"
@@ -477,14 +449,14 @@ def main(forward_read,name,reverse_read,error_corrector,keep,coverage,proportion
         subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce_path, shell=True)
     if "NULL" not in reduce:
         if "NULL" not in blast_nt:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt_path,cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt_path,cov_cutoff)
         else:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt,cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt,cov_cutoff)
     else:
         if "NULL" not in blast_nt:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt_path,cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt_path,cov_cutoff)
         else:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt,cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,GATK_PATH,blast_nt,cov_cutoff)
     os.chdir("%s" % start_path)
     if temp_files == "F":
         os.system("rm -rf %s.work_directory" % name)
@@ -507,12 +479,6 @@ if __name__ == "__main__":
     parser.add_option("-k", "--keep", dest="keep",
                       help="minimum length of contigs to keep, defaults to 200",
                       default="200", type="int")
-    parser.add_option("-c", "--coverage", dest="coverage",
-                      help="minimum coverage required for correcting SNPs, defaults to 3",
-                      default="3", type="int")
-    parser.add_option("-i", "--proportion", dest="proportion",
-                      help="minimum required proportion, defaults to 0.9",
-                      action="store", type="float", default="0.9")
     parser.add_option("-t", "--temp_files", dest="temp_files",
                       help="Keep temp files? Defaults to F",
                       action="callback", callback=test_truths, type="string", default="F")
@@ -532,7 +498,7 @@ if __name__ == "__main__":
                       help="PATH to blast nt database, defaults to NULL",
                       action="store", type="string", default="NULL")
     parser.add_option("-o", "--cov_cutoff", dest="cov_cutoff",
-                      help="value to pass to SPAdes cov_cutoff option",
+                      help="value to pass to SPAdes cov_cutoff option, default is 'auto', but can also be 'off'",
                       action="store", type="string", default="auto")
     options, args = parser.parse_args()
     mandatories = ["forward_read","name","reverse_read","ugap_path"]
@@ -541,7 +507,7 @@ if __name__ == "__main__":
             print "\nMust provide %s.\n" %m
             parser.print_help()
             exit(-1)
-    main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,options.coverage,
-         options.proportion,options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path,options.blast_nt,
+    main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,
+         options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path,options.blast_nt,
          options.cov_cutoff)
     
