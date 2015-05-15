@@ -409,7 +409,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     if "NULL" not in blast_nt:
         slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
         lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
-        print lengths
         subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out blast.out" % (name, blast_nt, processors), shell=True) 
         os.system("cp blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (start_path, name))
         os.system("sort -u -k 1,1 blast.out > blast.uniques")
