@@ -44,7 +44,7 @@ def test_truths(option, opt_str, value, parser):
         print "must select from T or F"
         sys.exit()
 
-def main(directory,error_corrector,keep,coverage,proportion,temp_files,reduce,processors,careful,blast_nt,cov_cutoff):
+def main(directory,error_corrector,keep,temp_files,reduce,processors,careful,blast_nt,cov_cutoff):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
     dependencies = ['bwa','samtools','spades.py','genomeCoverageBed',"blastall"]
