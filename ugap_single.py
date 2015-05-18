@@ -279,17 +279,17 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             os.system("cp %s_2.fastq.gz %s" % (name,reverse_path))
         else:
             print "to deplete reads, you need to have bam2fastq installed. Reads will not be depleted"
-    if int(get_sequence_length(forward_path, name))<=200 and int(get_sequence_length(forward_path, name))>=100:
+    if int(get_sequence_length_dev(forward_path, name))<=200 and int(get_sequence_length(forward_path, name))>=100:
         #Uses default K values, based on SPADes recs
         ks = "21,33,55,77"
-    elif int(get_sequence_length(forward_path, name))>200:
+    elif int(get_sequence_length_dev(forward_path, name))>200:
         ks = "21,33,55,77,99,127"
-    elif int(get_sequence_length(forward_path, name))<100:
+    elif int(get_sequence_length_dev(forward_path, name))<100:
         ks = "21,33"
     else:
         pass
     #Gets the sequence length independently for each genomes
-    length = (int(get_sequence_length(forward_path,name)/2))
+    length = (int(get_sequence_length_dev(forward_path,name)/2))
     #If trimmomatic has already been run, don't run again, trimmomatic requires PAIRED reads
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
