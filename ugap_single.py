@@ -266,7 +266,7 @@ def get_contig_lengths(in_fasta):
        length_dict.update({record.id:len(record.seq)})
     return length_dict
 
-def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,proportion,start_path,reduce,careful,UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff):
+def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff):
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
         rv = subprocess.call(['which', 'bam2fastq'])
