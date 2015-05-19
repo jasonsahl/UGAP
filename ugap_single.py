@@ -279,7 +279,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             os.system("cp %s_2.fastq.gz %s" % (name,reverse_path))
         else:
             print "to deplete reads, you need to have bam2fastq installed. Reads will not be depleted"
-    if int(get_sequence_length_dev(forward_path))<=200 and int(get_sequence_length(forward_path))>=100:
+    if int(get_sequence_length_dev(forward_path))<=200 and int(get_sequence_length_dev(forward_path))>=100:
         #Uses default K values, based on SPADes recs
         ks = "21,33,55,77"
     elif int(get_sequence_length_dev(forward_path))>200:
