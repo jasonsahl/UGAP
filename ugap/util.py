@@ -36,7 +36,6 @@ def merge_files_by_column(column, file_1, file_2, out_file):
     for line in open(file_1):
         line.strip()
 
-
 def doc(coverage, genome_size, name, suffix):
     incov = open(coverage, "U")
     ingenom = open(genome_size, "U")
@@ -91,20 +90,6 @@ def sum_coverage(coverage,cov,name):
         print >> outfile, k+"\t"+str(len(v))
     infile.close()
     outfile.close()
-
-        row = line.split()
-        column_value = row.pop(column)
-        join_map[column_value] = row
-    for line in open(file_2):
-        line.strip()
-        row = line.split()
-        column_value = row.pop(column)
-        if column_value in join_map:
-            join_map[column_value].extend(row)
-    fout = open(out_file, 'w')
-    for k, v in join_map.iteritems():
-        fout.write('\t'.join([k] + v) + '\n')
-    fout.close()
 
 def get_coverage(bam, size, name):
     """does the actual work"""
