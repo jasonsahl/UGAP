@@ -90,7 +90,7 @@ def get_sequence_length(fastq_in, name):
 
 def get_sequence_length_dev(fastq_in, name):
     length = []
-    for record in SeqIO.parse(open(fastq_in, "U"), "fastq"):
+    for record in SeqIO.parse(open(fastq_in, "U"), "fastq-illumina"):
         length.append(len(record.seq))
     return length
 
