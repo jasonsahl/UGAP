@@ -35,7 +35,20 @@ def merge_files_by_column(column, file_1, file_2, out_file):
     join_map = {}
     for line in open(file_1):
         line.strip()
-
+        row = line.split()
+        column_value = row.pop(column)
+        join_map[column_value] = row
+    for line in open(file_2):
+        line.strip()
+        row = line.split()
+        column_value = row.pop(column)
+        if column_value in join_map:
+            join_map[column_value].extend(row)
+    fout = open(out_file, 'w')
+    for k, v in join_map.iteritems():
+        fout.write('\t'.join([k] + v) + '\n')
+    fout.close()
+    
 def doc(coverage, genome_size, name, suffix):
     incov = open(coverage, "U")
     ingenom = open(genome_size, "U")
@@ -646,7 +659,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     make_bam("%s.sam" % name, name)
     print "running Pilon"
     try:
-        print "java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed.bam --output %s_pilon" % (PILON_PATH,processors,name,name,name)
         os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
     except:
         print "problem running Pilon. Exiting...."
