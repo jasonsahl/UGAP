@@ -89,7 +89,7 @@ def get_sequence_length(fastq_in, name):
     return length
 
 def get_sequence_length_dev(fastq_in, name):
-    rom Bio.SeqIO.QualityIO import FastqGeneralIterator
+    from Bio.SeqIO.QualityIO import FastqGeneralIterator
     length = []
     for title, seq, qual in FastqGeneralIterator(open(fastq_in, "U")):
         length.append(len(seq))
