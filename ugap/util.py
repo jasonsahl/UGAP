@@ -88,12 +88,13 @@ def get_sequence_length(fastq_in, name):
     os.system("rm -rf %s.tmp.fastq" % name)
     return length
 
-def get_sequence_length_dev(fastq_in, name):
-    length = []
-    for record in SeqIO.parse(open(fastq_in), "fastq-sanger"):
-        length.append(len(seq))
-    return length
-
+def get_sequence_length_dev(fastq_in):
+    from itertools import islice
+    from gzip import GzipFile
+    with GzipFile("%s" % fastq_in) as file:
+        head = list(islice(file, 2))
+    return len(head[1])
+       
 def clean_fasta(fasta_in, fasta_out):
     seqrecords=[]
     for record in SeqIO.parse(open(fasta_in, "U"), "fasta"):
