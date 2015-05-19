@@ -10,6 +10,214 @@ import decimal
 import re
 import sys
 
+
+
+def report_stats(results, bam, name):
+    infile = open(results, "rU")
+    outfile = open("%s_breadth.txt" % name, "w")
+    print >> outfile, name,"\n",
+    for line in infile:
+        fields = line.split()
+        chromosome = fields[0]
+        try:
+            amount = (int(fields[2])/int(fields[1]))*100
+            print >> outfile,chromosome,"\t",amount,"\n",
+        except:
+            print >> outfile, chromosome,"\t","0","\n",
+            sys.exc_clear()
+    infile.close()
+    outfile.close()
+
+def merge_files_by_column(column, file_1, file_2, out_file):
+    """Takes 2 file and merge their columns based on the column. It is assumed
+    that line ordering in the files do not match, so we read both files into memory
+    and join them"""
+    join_map = {}
+    for line in open(file_1):
+        line.strip()
+
+
+def doc(coverage, genome_size, name, suffix):
+    incov = open(coverage, "U")
+    ingenom = open(genome_size, "U")
+    outfile = open("%s_%s_depth.txt" % (name, suffix), "w")
+    all = [ ]
+    my_dict = {}
+    for line in incov:
+        fields=line.split()
+        fields = map(lambda s: s.strip(), fields)
+        all.append(fields)
+    for x, y in all:
+        if int(y)>int(1):
+           try:
+                my_dict[x].append(y)
+           except KeyError:
+                my_dict[x] = [y]
+        else:
+           continue
+    new_dict={}
+    for k,v in my_dict.iteritems():
+        ints = map(int, v)
+        new_dict.update({k:sum(ints)})
+    genome_size_dict = {}
+    for line in ingenom:
+        fields = line.split()
+        genome_size_dict.update({fields[0]:fields[1]})
+    print >> outfile, name,"\n",
+    for k,v in new_dict.iteritems():
+        print >> outfile, k,"\t",round(int(v)/int(genome_size_dict.get(k)),0)
+    for y,z in genome_size_dict.iteritems():
+        if y not in new_dict:
+                print >> outfile, y,"\t","0"
+
+def sum_coverage(coverage,cov,name):
+    infile = open(coverage, "rU")
+    outfile = open("%s.amount_covered.txt" % name, "w")
+    all = [ ]
+    dict = {}
+    for line in infile:
+        fields=line.split()
+        fields = map(lambda s: s.strip(), fields)
+        all.append(fields)
+    for x, y in all:
+        if int(y)>int(cov):
+           try:
+               dict[x].append(y)
+           except KeyError:
+               dict[x] = [y]
+        else:
+               pass
+    for k,v in dict.iteritems():
+        print >> outfile, k+"\t"+str(len(v))
+    infile.close()
+    outfile.close()
+
+        row = line.split()
+        column_value = row.pop(column)
+        join_map[column_value] = row
+    for line in open(file_2):
+        line.strip()
+        row = line.split()
+        column_value = row.pop(column)
+        if column_value in join_map:
+            join_map[column_value].extend(row)
+    fout = open(out_file, 'w')
+    for k, v in join_map.iteritems():
+        fout.write('\t'.join([k] + v) + '\n')
+    fout.close()
+
+def get_coverage(bam, size, name):
+    """does the actual work"""
+    subprocess.check_call("genomeCoverageBed -d -ibam %s -g %s > %s.tmp.out" % (bam,size,name), shell=True)
+
+def remove_column(temp_file, name):
+    infile = open(temp_file, "rU")
+    outfile = open("%s.coverage.out" % name, "w")
+    my_fields = [ ]
+    for line in infile:
+        fields=line.split()
+        del fields[1]
+        my_fields.append(fields)
+    for x in my_fields:
+        print >> outfile, "\t".join(x)
+    infile.close()
+    outfile.close()
+
+def get_seq_length(ref, name):
+    """uses BioPython in order to calculated the length of
+    each fasta entry in the reference fasta"""
+    infile = open(ref, "rU")
+    outfile = open("%s.tmp.txt" % name, "w")
+    for record in SeqIO.parse(infile, "fasta"):
+        print >> outfile,record.id,len(record.seq)
+    infile.close()
+    outfile.close()
+  
+def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_path, length):
+    args=['java','-jar','%s' % trim_path, 'PE', '-threads', '%s' % processors,
+              '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % ID, 'F.unpaired.fastq.gz',
+	      '%s.R.paired.fastq.gz' % ID, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:2:30:10' % ugap_path,
+	      'MINLEN:%s' % length]
+    vcf_fh = open('%s.trimmomatic.out' % ID, 'w')
+    log_fh = open('%s.trimmomatic.log' % ID, 'w')
+    try:
+        trim = Popen(args, stderr=vcf_fh, stdout=log_fh)
+        trim.wait()
+    except:
+        log_isg.logPrint("problem encountered with trimmomatic")
+
+def slice_assembly(infile, keep_length, outfile):
+    input=open(infile, "rU")
+    output = open(outfile, "w")
+    start=0
+    end=keep_length
+    for record in SeqIO.parse(input,"fasta"):
+        print >> output,">"+record.id+"\n",
+        print >> output, record.seq[start:end]
+    input.close()
+    output.close()
+
+def find_missing_coverages(depth, merged, lengths, name):
+    all_ids = {}
+    outfile = open("%s.new.txt" % name, "w")
+    for line in open(depth, "U"):
+        fields = line.split()
+        if len(fields)==1:
+            pass
+        else:
+            all_ids.update({fields[0]:fields[1]})
+    for k,v in all_ids.iteritems():
+        hits = []
+        nohits = []
+        for line in open(merged, "U"):
+            fields = line.split()
+            if k == fields[0]:
+                print >> outfile, line,
+                hits.append("1")
+            else:
+                nohits.append("1")
+        allhits = hits + nohits
+        if len(nohits)==len(allhits):
+            print >> outfile, str(k)+"\t"+"N/A"+"\t"+"no_blast_hit"+"\t"+str(lengths.get(k))+"\t"+str(v)
+    outfile.close()
+               
+def merge_blast_with_coverages(blast_report, coverages, lengths, name):
+    from operator import itemgetter
+    coverage_dict = {}
+    out_list = []
+    outfile = open("%s.depth_blast_merged.txt" % name, "w")
+    #dictionary contains contig:coverage
+    for line in open(coverages, "U"):
+        fields = line.split()
+        if len(fields)==1:
+            pass
+        else:
+            coverage_dict.update({fields[0]:fields[1]})
+    for line in open(blast_report, "U"):
+        file_list = []
+        newline = line.strip()
+        #out_list = []
+        if line.startswith("#"):
+            pass
+        else:
+            fields = newline.split("\t")
+            single_list = []
+            single_list.append(str(fields[0]))
+            single_list.append(str(fields[12]))
+            single_list.append(str(fields[10]))
+            single_list.append(str(lengths.get(fields[0])))
+            single_list.append(str(coverage_dict.get(fields[0])))
+            out_list.append(single_list)
+            
+    for alist in out_list:
+        print >> outfile, "\t".join(alist)
+
+def get_contig_lengths(in_fasta):
+    length_dict = {}
+    for record in SeqIO.parse(open(in_fasta, "U"), "fasta"):
+       length_dict.update({record.id:len(record.seq)})
+    return length_dict
+
 def get_readFile_components(full_file_path):
     (file_path,file_name) = os.path.split(full_file_path)
     m1 = re.match("(.*).gz",file_name)
@@ -77,17 +285,6 @@ def get_seq_name(in_fasta):
     """used for renaming the sequences"""
     return os.path.basename(in_fasta)
 
-def get_sequence_length(fastq_in, name):
-    os.system("gzip -dc %s > %s.tmp.fastq" % (fastq_in,name))
-    lines = [ ]
-    with open("%s.tmp.fastq" % name, "U") as f:
-        for line in f.readlines()[1:2]:
-            for x in line:
-                lines.append(x)
-    length=len(lines)
-    os.system("rm -rf %s.tmp.fastq" % name)
-    return length
-
 def get_sequence_length_dev(fastq_in):
     from itertools import islice
     from gzip import GzipFile
@@ -98,7 +295,7 @@ def get_sequence_length_dev(fastq_in):
 def clean_fasta(fasta_in, fasta_out):
     seqrecords=[]
     for record in SeqIO.parse(open(fasta_in, "U"), "fasta"):
-	    seqrecords.append(record)
+        seqrecords.append(record)
     output_handle=open(fasta_out, "w")
     SeqIO.write(seqrecords, output_handle, "fasta")
     output_handle.close()
@@ -142,10 +339,10 @@ def run_bwa(read_1, read_2, processors, name, reference):
 
 def make_bam(in_sam, name):
     subprocess.check_call("samtools view -h -b -S %s > %s.1.bam 2> /dev/null" % (in_sam, name), shell=True)
-    subprocess.check_call("samtools view -u -h -F4 -o %s.2.bam %s.1.bam" % (name,name), shell=True)
-    subprocess.check_call("samtools view -h -b -q1 -F4 -o %s.3.bam %s.2.bam" % (name,name), shell=True)
-    subprocess.check_call("samtools sort %s.3.bam %s_renamed" % (name,name), shell=True)
-    subprocess.check_call("samtools index %s_renamed.bam" % name, shell=True)
+    subprocess.check_call("samtools view -u -h -F4 -o %s.2.bam %s.1.bam > /dev/null 2>&1" % (name,name), shell=True)
+    subprocess.check_call("samtools view -h -b -q1 -F4 -o %s.3.bam %s.2.bam > /dev/null 2>&1" % (name,name), shell=True)
+    subprocess.check_call("samtools sort %s.3.bam %s_renamed > /dev/null 2>&1" % (name,name), shell=True)
+    subprocess.check_call("samtools index %s_renamed.bam > /dev/null 2>&1" % name, shell=True)
     subprocess.check_call("rm %s.1.bam %s.2.bam %s.3.bam" % (name,name,name), shell=True)
 
 def run_gatk(reference, processors, name, gatk):
@@ -185,6 +382,8 @@ def parse_vcf(vcf, coverage, proportion):
                 pass
         else:
             continue
+    vcf_in.close()
+    vcf_out.close()
     return to_fix
 
 def rename_multifasta(fasta_in, prefix, fasta_out):
@@ -207,19 +406,7 @@ def sum_totals(input, name, output):
             coverages.append(float(fields[1]))
     print >> outfile, name, sum(coverages)/len(coverages)
     outfile.close()
-    
-def process_coverage(name):
-    curr_dir= os.getcwd()
-    outfile = open("coverage_out.txt", "a")
-    coverage_dict = {}
-    for infile in glob.glob(os.path.join(curr_dir, "*_coverage.sample_summary")):
-        for line in open(infile, "U"):
-            if line.startswith("%s" % name):
-                fields = line.split()
-                coverage_dict.update({fields[0]:fields[2]})
-    for k,v in coverage_dict.iteritems():
-        print >> outfile,k,v+"\n",
-                
+   
 rec=1
 
 def autoIncrement(): 
@@ -231,19 +418,6 @@ def autoIncrement():
     else:  
         rec += pInterval  
         return rec
-
-def fix_assembly(in_tab, to_fix, name):
-    output_handle=open("%s_corrected_assembly.fasta" % name,"w")
-    for line in open(in_tab, "U"):
-        fields=line.split()
-        seq_list=[]
-        seq_list=list(fields[1])
-        for x in to_fix:
-            if fields[0]== x[0]:
-                seq_list[int(x[1])-1]=x[2]
-        print >> output_handle,">"+fields[0]
-        print >> output_handle, "".join(seq_list)
-    output_handle.close()
 
 def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_path,reduce):
     #Is this still relevant?
@@ -412,3 +586,129 @@ def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_
     results = set(p_func.pmap(_perform_workflow,
                               files_and_temp_names,
                               num_workers=processors))
+
+def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff):
+    if "NULL" not in reduce:
+        #Reads will be depleted in relation to a given reference
+        rv = subprocess.call(['which', 'bam2fastq'])
+        if rx == 0:
+            run_bwa("%s" % forward_path, "%s" % reverse_path, processors, name,"%s" % reduce)
+            os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
+            os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > %s.reduce_results.txt" % (name,name,name))
+            os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
+            os.system("cp %s_1.fastq.gz %s" % (name,forward_path))
+            os.system("cp %s_2.fastq.gz %s" % (name,reverse_path))
+        else:
+            print "to deplete reads, you need to have bam2fastq installed. Reads will not be depleted"
+    if int(get_sequence_length_dev(forward_path))<=200 and int(get_sequence_length_dev(forward_path))>=100:
+        #Uses default K values, based on SPADes recs
+        ks = "21,33,55,77"
+    elif int(get_sequence_length_dev(forward_path))>200:
+        ks = "21,33,55,77,99,127"
+    elif int(get_sequence_length_dev(forward_path))<100:
+        ks = "21,33"
+    else:
+        pass
+    #Gets the sequence length independently for each genomes
+    length = (int(get_sequence_length_dev(forward_path)/2))
+    #If trimmomatic has already been run, don't run again, trimmomatic requires PAIRED reads
+    if os.path.isfile("%s.F.paired.fastq.gz" % name):
+        pass
+    else:
+        run_trimmomatic(TRIM_PATH, processors, forward_path, reverse_path, name, UGAP_PATH, length)
+    #This next section runs spades according to the input parameters
+    if os.path.isfile("%s.spades.assembly.fasta" % name):
+        pass
+    else:
+        if error_corrector=="hammer":
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+        elif error_corrector=="musket":
+            ab = subprocess.call(['which', 'musket'])
+            if ab == 0:
+                pass
+            else:
+                print "musket isn't in your path, but needs to be!"
+                sys.exit()
+            #Need to test again with Musket
+            subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
+            subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
+            subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+        else:
+            if careful == "T":
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+        os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
+    #filters contigs by a user-defined length threshold, defaults to 200nts
+    filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
+    #This uses biopython to pretty up the sequences, but not sure it would affect downstream usability
+    clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
+    #Cleans up the names for downstream apps
+    rename_multifasta("%s_cleaned.fasta" % name, name, "%s_renamed.fasta" % name)
+    """This section is actively being removed"""
+    #Here I align reads to this new assembly
+    subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
+    #Index renamed.fasta for calling variants
+    os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
+    run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
+    make_bam("%s.sam" % name, name)
+    print "running Pilon"
+    try:
+        print "java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed.bam --output %s_pilon" % (PILON_PATH,processors,name,name,name)
+        os.system("java -jar %s --threads %s --genome %s_renamed.fasta --frags %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
+    except:
+        print "problem running Pilon. Exiting...."
+        sys.exit()
+    rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
+    filter_seqs("%s_final_assembly.fasta" % name, keep, name)
+    #filters again by minimum length, output is named %s.%s.spades.assembly.fasta
+    try:
+        subprocess.check_call("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep), shell=True, stderr=open(os.devnull, "w"))
+    except:
+        print "problem fixing missing spaces"
+        pass
+    clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s/UGAP_assembly_results/%s_final_assembly.fasta" % (start_path,name))
+    try:
+        #Runs Prokka, if it's installed
+        os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name,keep))
+        subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
+    except:
+        print "Prokka was not run, so no annotation files will be included"
+        pass
+    #Copies these files to your output directory, whether or not the previous commands were successful
+    os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
+    #I have to re-run bwa on the new assembly, as the contig lengths can change from the original SPAdes assembly
+    os.system("bwa index %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,keep))
+    run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s.%s.spades.assembly.fasta" % (name,keep))
+    make_bam("%s.sam" % name, name)
+    #This is for the per contig coverage routine. I have to re-run BWA because I renamed contigs and potentially the numbers don't match
+    get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep), name)
+    subprocess.check_call("tr ' ' '\t' < %s.tmp.txt > %s.genome_size.txt" % (name, name), shell=True)
+    get_coverage("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
+    remove_column("%s.tmp.out" % name, name)
+    sum_coverage("%s.coverage.out" % name, 3, name)
+    merge_files_by_column(0,"%s.genome_size.txt" % name, "%s.amount_covered.txt" % name, "%s.results.txt" % name)
+    report_stats("%s.results.txt" % name, "%s_renamed_header.bam" % name, name)
+    doc("%s.coverage.out" % name, "%s.genome_size.txt" % name, name, 3)
+    os.system("cp %s_3_depth.txt %s/UGAP_assembly_results" % (name,start_path))
+    sum_totals("%s_3_depth.txt" % name, name, "%s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
+    if "NULL" not in blast_nt:
+        slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),keep,"%s.chunks.fasta" % name)
+        lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
+        subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out %s.blast.out" % (name, blast_nt, processors, name), shell=True) 
+        os.system("cp %s.blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (name, start_path, name))
+        os.system("sort -u -k 1,1 %s.blast.out > %s.blast.uniques" % (name, name))
+        merge_blast_with_coverages("%s.blast.uniques" % name, "%s_3_depth.txt" % name, lengths, name)
+        os.system("sed 's/ /_/g' %s.depth_blast_merged.txt > %s.tmp.txt" % (name,name))
+        os.system("sort -u -k 1,1 %s.tmp.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name, start_path, name))
+        find_missing_coverages("%s_3_depth.txt" % name, "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths, name)
+        os.system("sort -u -k 1,1 %s.new.txt | sort -gr -k 5,5 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name, start_path, name))
+    else:
+        print "BLAST not run"
