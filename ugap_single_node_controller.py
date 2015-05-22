@@ -44,9 +44,9 @@ def parse_config_file(config_file):
             pass
         else:
             fields = line.split()
-            datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10],fields[11],fields[12],fields[13]),)+datasets
-            processors = fields[9]
-            ugap_path = fields[11]
+            datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10],fields[11]),)+datasets
+            processors = fields[7]
+            ugap_path = fields[9]
     return datasets, processors, ugap_path
 
 def run_pipeline_mixed(forward_path,reverse_path,name,error_corrector,processors,keep,coverage,proportion,start_path,reduce,careful, UGAP_PATH, TRIM_PATH, PICARD_PATH, PILON_PATH, GATK_PATH, blast_nt, cov_cutoff):
@@ -196,10 +196,9 @@ def run_pipeline_mixed(forward_path,reverse_path,name,error_corrector,processors
         print "BLAST not run"
 
 
-def main(config_file, memory, controller, queue):
+def main(config_file, memory):
     datasets, processors, ugap_path=parse_config_file(config_file)
     UGAP_PATH=ugap_path
-    GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
     PILON_PATH=UGAP_PATH+"/bin/pilon-1.12.jar"
@@ -210,7 +209,6 @@ def main(config_file, memory, controller, queue):
         os.makedirs('%s/work_directory' % start_path)
     except OSError, e:
         if e.errno != errno.EEXIST:raise 
-            #dir_path=os.path.abspath("%s" % directory)
     if "NULL" != reduce:
         reduce_path=os.path.abspath("%s" % reduce)
     effective_jobs = int(int(memory)/8000)
@@ -220,12 +218,11 @@ def main(config_file, memory, controller, queue):
     os.chdir("%s/work_directory" % start_dir) 
     def _perform_workflow(data):
         tn, f = data
-        run_pipeline_mixed(f)
+        run_single_loop(f[1],f[2],f[0],f[3],f[7],f[5],start_path,f[6],f[8],UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,f[10],f[11])
     results = set(p_func.pmap(_perform_workflow,
                               datasets,
                               num_workers=effective_jobs))
 
-    
 if __name__ == "__main__":
     usage="usage: %prog [options]"
     parser = OptionParser(usage=usage)
@@ -233,14 +230,8 @@ if __name__ == "__main__":
                       help="config file that populates the UGAP single assembly",
                       action="callback", callback=test_file, type="string")
     parser.add_option("-m", "--memory", dest="memory",
-                      help="amount of memory requested, defaults to 15G, enter 15000",
-                      action="store", type="string", default="15000")
-    parser.add_option("-o", "--controller", dest="controller",
-                      help="system to use: choose from slurm, torque [default], or sge",
-                      action="callback", callback=test_options, type="string", default="torque")
-    parser.add_option("-q", "--queue", dest="queue",
-                      help="which queue to use?",
-                      action="store", type="string")
+                      help="amount of memory on the server, defaults to 48G, enter 48000",
+                      action="store", type="string", default="48000")
     options, args = parser.parse_args()
     mandatories = ["config_file"]
     for m in mandatories:
@@ -248,5 +239,5 @@ if __name__ == "__main__":
             print "\nMust provide %s.\n" %m
             parser.print_help()
             exit(-1)
-    main(options.config_file,options.memory,options.controller,options.queue)
+    main(options.config_file,options.memory)
         
