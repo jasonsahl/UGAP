@@ -208,7 +208,11 @@ def main(config_file, memory):
         os.makedirs('%s/UGAP_assembly_results' % start_path)
         os.makedirs('%s/work_directory' % start_path)
     except OSError, e:
-        if e.errno != errno.EEXIST:raise 
+        if e.errno != errno.EEXIST:raise
+    try:
+        os.makedirs('%s/work_directory' % start_path)
+    except OSError, e:
+        if e.errno != errno.EEXIST:raise
     if "NULL" != reduce:
         reduce_path=os.path.abspath("%s" % reduce)
     effective_jobs = int(int(memory)/8000)
