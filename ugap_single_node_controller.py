@@ -221,7 +221,9 @@ def main(config_file, memory):
     effective_processors = int(int(processors)/effective_jobs)
     os.chdir("%s/work_directory" % start_dir) 
     def _perform_workflow(data):
-        tn, f = data
+        #tn, f = data
+        #f = data
+        print data
         run_single_loop(f[1],f[2],f[0],f[3],f[7],f[5],start_path,f[6],f[8],UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,f[10],f[11])
     results = set(p_func.pmap(_perform_workflow,
                               datasets,
