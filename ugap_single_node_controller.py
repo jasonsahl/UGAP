@@ -9,6 +9,8 @@ from optparse import OptionParser
 from popen2 import popen2
 import errno
 
+from ugap.util import run_single_loop
+
 try:
     from igs.utils import functional as func
     from igs.utils import logging
