@@ -2,14 +2,12 @@
 
 -Dependencies that MUST be installed by the user:
 
-1. GATK (Recommend version < v3), must be in UGAP/bin directory, with UGAP being
-   where UGAP is installed
-2. SPAdes, must be version 3.5
-3. genomeCoverageBed (part of BEDTOOLS). Linux version included in /bin folder. If
+1. SPAdes, must be version 3.5
+2. genomeCoverageBed (part of BEDTOOLS). Linux version included in /bin folder. If
    incompatible with your version, you must replace this version with your binary.
-4. bwa (must have version that supports BWA-MEM algorithm)
-5. Samtools
-6. BioPython
+3. bwa (must have version that supports BWA-MEM algorithm)
+4. Samtools
+5. BioPython
 
 -Optional dependencies for full functionality
 
