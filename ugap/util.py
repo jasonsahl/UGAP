@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+
+from __future__ import division
+import random
 import os
 import logging
 from Bio import SeqIO
@@ -11,6 +15,38 @@ import re
 import sys
 
 
+def subsample_reads(input_fastq,output_fastq):
+    #adapted from pythonforbiologists.com example
+    from gzip import GzipFile
+    import gzip
+    import random
+    number_to_sample = 4000000
+    with GzipFile(input_fastq) as input:
+        num_lines = sum([1 for line in input])
+        total_records = int(num_lines / 4)
+    if int(total_records)<int(number_to_sample):
+        os.system("cp %s %s" % (input_fastq,output_fastq))
+    else: 
+        outfile = gzip.open(output_fastq, "wb")
+        output_sequence_sets = (set(random.sample(xrange(total_records + 1), number_to_sample)))
+        print output_sequence_sets
+        record_number = 0
+        with GzipFile(input_fastq) as input:
+            for line1 in input:
+                line2 = input.next()
+                line3 = input.next()
+                line4 = input.next()
+                if record_number in output_sequence_sets:
+                    outfile.write(line1)
+                    outfile.write(line2)
+                    outfile.write(line3)
+                    outfile.write(line4)
+                else:
+                    pass
+                record_number += 1
+        outfile.close()
+
+    #subsample_reads("B_mallei_Turkey9_S1_L001_R2_001.fastq.gz", "test.fastq.gz")
 
 def report_stats(results, bam, name):
     infile = open(results, "rU")
@@ -594,8 +630,10 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
             os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > %s.reduce_results.txt" % (name,name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
-            os.system("cp %s_1.fastq.gz %s" % (name,forward_path))
-            os.system("cp %s_2.fastq.gz %s" % (name,reverse_path))
+            #os.system("cp %s_1.fastq.gz %s" % (name,forward_path))
+            #os.system("cp %s_2.fastq.gz %s" % (name,reverse_path))
+            subsample_reads("%s_1.fastq.gz", "%s.F.tmp.fastq.gz" % name)
+            subsample_reads("%s_2.fastq.gz", "%s.R.tmp.fastq.gz" % name)
         else:
             print "to deplete reads, you need to have bam2fastq installed. Reads will not be depleted"
     if int(get_sequence_length_dev(forward_path))<=200 and int(get_sequence_length_dev(forward_path))>=100:
@@ -609,11 +647,17 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         pass
     #Gets the sequence length independently for each genomes
     length = (int(get_sequence_length_dev(forward_path)/2))
+    #Sub-sample reads to 4 million in each direction
+    if os.path.isfile("%s.F.tmp.fastq.gz" % name):
+        pass
+    else:
+        subsample_reads(forward_path, "%s.F.tmp.fastq.gz" % name)
+        subsample_reads(reverse_path, "%s.R.tmp.fastq.gz" % name)
     #If trimmomatic has already been run, don't run again, trimmomatic requires PAIRED reads
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
     else:
-        run_trimmomatic(TRIM_PATH, processors, forward_path, reverse_path, name, UGAP_PATH, length)
+        run_trimmomatic(TRIM_PATH, processors, "%s.F.tmp.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name, name, UGAP_PATH, length)
     #This next section runs spades according to the input parameters
     if os.path.isfile("%s.spades.assembly.fasta" % name):
         pass
