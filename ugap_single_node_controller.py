@@ -226,7 +226,7 @@ def main(config_file, memory):
         #tn, f = data
         f = data
         print data
-        run_single_loop(f[1],f[2],f[0],f[3],f[7],f[5],start_path,f[6],f[8],UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,f[10],f[11])
+        run_single_loop(f[1],f[2],f[0],f[3],f[7],f[4],start_path,f[6],f[8],UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,f[10],f[11])
     results = set(p_func.pmap(_perform_workflow,
                               datasets,
                               num_workers=effective_jobs))
