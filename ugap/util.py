@@ -184,10 +184,10 @@ def slice_assembly(infile, keep_length, outfile):
     input=open(infile, "rU")
     output = open(outfile, "w")
     start=0
-    end=keep_length
+    #end=keep_length
     for record in SeqIO.parse(input,"fasta"):
         print >> output,">"+record.id+"\n",
-        print >> output, record.seq[start:end]
+        print >> output, record.seq[start:keep_length]
     input.close()
     output.close()
 
