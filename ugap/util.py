@@ -630,8 +630,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
             os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > %s.reduce_results.txt" % (name,name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
-            #os.system("cp %s_1.fastq.gz %s" % (name,forward_path))
-            #os.system("cp %s_2.fastq.gz %s" % (name,reverse_path))
             subsample_reads("%s_1.fastq.gz", "%s.F.tmp.fastq.gz" % name)
             subsample_reads("%s_2.fastq.gz", "%s.R.tmp.fastq.gz" % name)
         else:
@@ -647,7 +645,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         pass
     #Gets the sequence length independently for each genomes
     length = (int(get_sequence_length_dev(forward_path)/2))
-    #Sub-sample reads to 4 million in each direction
+    #Sub-sample reads to 4 million in each direction: at some point this will become a tunable parameter
     if os.path.isfile("%s.F.tmp.fastq.gz" % name):
         pass
     else:
@@ -741,7 +739,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("cp %s_3_depth.txt %s/UGAP_assembly_results" % (name,start_path))
     sum_totals("%s_3_depth.txt" % name, name, "%s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
     if "NULL" not in blast_nt:
-        print keep, int(keep)
         slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),int(keep),"%s.chunks.fasta" % name)
         lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
         subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out %s.blast.out" % (name, blast_nt, processors, name), shell=True) 
