@@ -464,7 +464,7 @@ def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_
 	    try:
 	        subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce, shell=True)
 	    except:
-		print "problems with indexing input file"
+		    print "problems with indexing input file"
 		sys.exit()
 	    try:
 	        run_bwa("%s" % f[0], "%s" % f[1], processors, idx,"%s" % reduce)
@@ -630,8 +630,8 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
             os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > %s.reduce_results.txt" % (name,name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
-            subsample_reads("%s_1.fastq.gz", "%s.F.tmp.fastq.gz" % name)
-            subsample_reads("%s_2.fastq.gz", "%s.R.tmp.fastq.gz" % name)
+            subsample_reads("%s_1.fastq.gz" % name, "%s.F.tmp.fastq.gz" % name)
+            subsample_reads("%s_2.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name)
         else:
             print "to deplete reads, you need to have bam2fastq installed. Reads will not be depleted"
     if int(get_sequence_length_dev(forward_path))<=200 and int(get_sequence_length_dev(forward_path))>=100:
