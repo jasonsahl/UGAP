@@ -61,11 +61,11 @@ def main(config_file, memory):
     start_path = os.path.abspath("%s" % start_dir)
     try:
         os.makedirs('%s/UGAP_assembly_results' % start_path)
-        os.makedirs('%s/ugap_work_directory' % start_path)
+        #os.makedirs('%s/ugap_work_directory' % start_path)
     except OSError, e:
         if e.errno != errno.EEXIST:raise
     try:
-        os.makedirs('%s/work_directory' % start_path)
+        os.makedirs('%s/ugap_work_directory' % start_path)
     except OSError, e:
         if e.errno != errno.EEXIST:raise
     if "NULL" != reduce:
