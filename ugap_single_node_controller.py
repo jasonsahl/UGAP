@@ -61,7 +61,7 @@ def main(config_file, memory):
     start_path = os.path.abspath("%s" % start_dir)
     try:
         os.makedirs('%s/UGAP_assembly_results' % start_path)
-        os.makedirs('%s/work_directory' % start_path)
+        os.makedirs('%s/ugap_work_directory' % start_path)
     except OSError, e:
         if e.errno != errno.EEXIST:raise
     try:
@@ -75,12 +75,18 @@ def main(config_file, memory):
         effective_jobs = 1
     effective_processors = int(int(processors)/effective_jobs)
     os.chdir("%s/work_directory" % start_dir) 
+    keep_stuff = []
     def _perform_workflow(data):
         f = data
         run_single_loop(f[1],f[2],f[0],f[3],f[7],f[4],start_path,f[6],f[8],UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,f[10],f[11])
+        keep_stuff.append(f[5])
     results = set(p_func.pmap(_perform_workflow,
                               datasets,
                               num_workers=effective_jobs))
+    if "F" in keep_stuff:
+        pass
+    else:
+        os.sytem("rm -rf ugap_work_directory")
 
 if __name__ == "__main__":
     usage="usage: %prog [options]"
