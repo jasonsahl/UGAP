@@ -74,7 +74,7 @@ def main(config_file, memory):
     if effective_jobs <=1:
         effective_jobs = 1
     effective_processors = int(int(processors)/effective_jobs)
-    os.chdir("%s/work_directory" % start_dir) 
+    os.chdir("%s/ugap_work_directory" % start_dir) 
     keep_stuff = []
     def _perform_workflow(data):
         f = data
