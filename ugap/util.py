@@ -465,7 +465,7 @@ def run_loop(fileSets,error_corrector,processors,keep,coverage,proportion,start_
 	        subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce, shell=True)
 	    except:
 		    print "problems with indexing input file"
-		sys.exit()
+		    sys.exit()
 	    try:
 	        run_bwa("%s" % f[0], "%s" % f[1], processors, idx,"%s" % reduce)
 	        os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (idx,idx))
