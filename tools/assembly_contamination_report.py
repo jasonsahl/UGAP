@@ -71,10 +71,10 @@ def run_bwa(ref, read_1, read_2, name):
     read_group = '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' % name
     print "aligning reads to reference"
     if "NULL" in read_2:
-        bwa_single(ref,read_1,"out.sam", log_file='sam.log',**{'-R':read_group})
+        bwa_single(ref,read_1,"%s.sam" % name, log_file='sam.log',**{'-R':read_group})
         print "alignment done"
     else:
-        bwa_paired(ref, read_1, read_2, "out.sam", log_file='sam.og',**{'-R':read_group})
+        bwa_paired(ref, read_1, read_2,"%s.sam" % name, log_file='sam.log',**{'-R':read_group})
         print "alignment done"
             
 def main(forward_read,name,reverse_read,assembly,blast_nt):
