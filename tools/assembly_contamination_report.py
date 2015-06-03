@@ -25,8 +25,8 @@ def test_file(option, opt_str, value, parser):
         print '%s file cannot be opened' % option
         sys.exit()
 
-def bwa_single(genome_index,read_1,sam_file, processors, log_file='',**my_opts):
-    mem_arguments = ['bwa', 'mem', '-v', '2', '-M', '-t', '%s' % processors]
+def bwa_single(genome_index,read_1,sam_file, log_file='',**my_opts):
+    mem_arguments = ['bwa', 'mem', '-v', '2', '-M', '-t', '4']
     for opt in my_opts.items():
         mem_arguments.extend(opt)
     mem_arguments.extend([genome_index,read_1])
@@ -46,8 +46,8 @@ def bwa_single(genome_index,read_1,sam_file, processors, log_file='',**my_opts):
     bwa = Popen(mem_arguments, stderr=log_fh, stdout=sam_fh)
     bwa.wait()
 
-def bwa_paired(genome_index,read_1,read_2,sam_file, processors, log_file='',**my_opts):
-    mem_arguments = ['bwa', 'mem', '-v', '2', '-M', '-t', '%s' % processors]
+def bwa_paired(genome_index,read_1,read_2,sam_file, log_file='',**my_opts):
+    mem_arguments = ['bwa', 'mem', '-v', '2', '-M', '-t', '4']
     for opt in my_opts.items():
         mem_arguments.extend(opt)
     mem_arguments.extend([genome_index,read_1,read_2])
@@ -71,10 +71,10 @@ def run_bwa(ref, read_1, read_2, name):
     read_group = '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' % name
     print "aligning reads to reference"
     if "NULL" in read_2:
-        bwa_single(ref,read_1,"out.sam", processors, log_file='sam.log',**{'-R':read_group})
+        bwa_single(ref,read_1,"out.sam", log_file='sam.log',**{'-R':read_group})
         print "alignment done"
     else:
-        bwa_paired(ref, read_1, read_2, "out.sam", processors, log_file='sam.og',**{'-R':read_group})
+        bwa_paired(ref, read_1, read_2, "out.sam", log_file='sam.og',**{'-R':read_group})
         print "alignment done"
             
 def main(forward_read,name,reverse_read,assembly,blast_nt):
