@@ -115,8 +115,8 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
             sys.exit()
     """done checking for dependencies"""
     os.chdir("%s/%s.work_directory" % (start_path,name))
-    if "NULL" not in reduce:
-        subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce_path, shell=True)
+    #if "NULL" not in reduce:
+    #    subprocess.check_call("bwa index %s > /dev/null 2>&1" % reduce_path, shell=True)
     if "NULL" not in reduce:
         if "NULL" not in blast_nt:
             run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff)
