@@ -29,7 +29,6 @@ def subsample_reads(input_fastq,output_fastq):
     else: 
         outfile = gzip.open(output_fastq, "wb")
         output_sequence_sets = (set(random.sample(xrange(total_records + 1), number_to_sample)))
-        print output_sequence_sets
         record_number = 0
         with GzipFile(input_fastq) as input:
             for line1 in input:

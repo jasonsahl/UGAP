@@ -130,7 +130,7 @@ def main(forward_read,name,reverse_read,assembly,blast_nt):
     find_missing_coverages("%s_3_depth.txt" % name, "%s_blast_depth_merged.txt" % name, lengths,name)
     os.system("sort -u -k 1,1 %s.new.txt | sort -gr -k 5,5 > %s_blast_depth_merged.txt" % (name,name))
     print "cleaning up"
-    os.system("rm sam.log %s.tmp.txt %s.genome_size.txt %s.tmp.out %s.coverage.out %s.amount_covered.txt %s.results.txt %s.blast.out %s.new.txt" % (name,name,name,name,name,name,name,name))
+    os.system("rm sam.log %s.chunks.fasta %s.tmp.txt %s.genome_size.txt %s.tmp.out %s.coverage.out %s.amount_covered.txt %s.results.txt %s.blast.out %s.new.txt" % (name,name,name,name,name,name,name,name,name))
 
 if __name__ == "__main__":
     usage="usage: %prog [options]"
