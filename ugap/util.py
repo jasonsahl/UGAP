@@ -526,7 +526,12 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
     #Index renamed.fasta for calling variants
     os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
-    run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
+    #run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
+    if "NULL" in reduce:
+        run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
+    else:
+        #align depleted reads if the reduced option is selected
+        run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
     make_bam("%s.sam" % name, name)
     print "running Pilon"
     try:
@@ -554,7 +559,10 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
     #I have to re-run bwa on the new assembly, as the contig lengths can change from the original SPAdes assembly
     os.system("bwa index %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,keep))
-    run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s.%s.spades.assembly.fasta" % (name,keep))
+    if "NULL" in reduce:
+        run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s.%s.spades.assembly.fasta" % (name,keep))
+    else:
+        run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s.%s.spades.assembly.fasta" % (name,keep))
     make_bam("%s.sam" % name, name)
     #This is for the per contig coverage routine. I have to re-run BWA because I renamed contigs and potentially the numbers don't match
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep), name)
