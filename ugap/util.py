@@ -455,8 +455,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         #Reads will be depleted in relation to a given reference
         rv = subprocess.call(['which', 'bam2fastq'])
         if rv == 0:
-            print reduce
-            run_bwa("%s" % forward_path, "%s" % reverse_path, processors, name,"%s" % reduce)
+            run_bwa(forward_path, reverse_path, processors, name, reduce)
             os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
             os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > %s.reduce_results.txt" % (name,name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
