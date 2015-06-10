@@ -47,6 +47,7 @@ def test_truths(option, opt_str, value, parser):
 def main(directory,error_corrector,keep,temp_files,reduce,processors,careful,blast_nt,cov_cutoff):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
+    reduce_path = os.path.abspath("%s" % reduce)
     dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
     for dependency in dependencies:
         ra = subprocess.check_call('which %s > /dev/null 2>&1' % dependency, shell=True)
@@ -56,7 +57,7 @@ def main(directory,error_corrector,keep,temp_files,reduce,processors,careful,bla
             print "%s is not in your path, but needs to be!" % dependency
             sys.exit()
     for k,v in fileSets.iteritems():
-        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)
+        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)
     
 if __name__ == "__main__":
     usage="usage: %prog [options]"
