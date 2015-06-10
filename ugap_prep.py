@@ -75,10 +75,10 @@ if __name__ == "__main__":
                       help="Keep temp files? Defaults to F",
                       action="callback", callback=test_truths, type="string", default="F")
     parser.add_option("-r", "--reduce", dest="reduce",
-                      help="Keep reads that don't align to provided genome",
+                      help="Keep reads that don't align to provided genome, defaults to NULL",
                       action="store", type="string", default="NULL")
     parser.add_option("-p", "--processors", dest="processors",
-                      help="number of processors to apply to the assembly",
+                      help="number of processors to apply to the assembly, defaults to 4",
                       action="store", type="int", default="4")
     parser.add_option("-x", "--careful", dest="careful",
                       help="use careful option in spades? Defaults to T",
