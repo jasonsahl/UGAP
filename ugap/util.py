@@ -26,7 +26,7 @@ def subsample_reads(input_fastq,output_fastq):
         total_records = int(num_lines / 4)
     if int(total_records)<int(number_to_sample):
         os.system("cp %s %s" % (input_fastq,output_fastq))
-    else: 
+    else:
         outfile = gzip.open(output_fastq, "wb")
         output_sequence_sets = (set(random.sample(xrange(total_records + 1), number_to_sample)))
         record_number = 0
@@ -81,7 +81,7 @@ def merge_files_by_column(column, file_1, file_2, out_file):
     for k, v in join_map.iteritems():
         fout.write('\t'.join([k] + v) + '\n')
     fout.close()
-    
+
 def doc(coverage, genome_size, name, suffix):
     incov = open(coverage, "U")
     ingenom = open(genome_size, "U")
@@ -163,11 +163,11 @@ def get_seq_length(ref, name):
         print >> outfile,record.id,len(record.seq)
     infile.close()
     outfile.close()
-  
+
 def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_path, length):
     args=['java','-jar','%s' % trim_path, 'PE', '-threads', '%s' % processors,
               '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % ID, 'F.unpaired.fastq.gz',
-	      '%s.R.paired.fastq.gz' % ID, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:2:30:10' % ugap_path,
+	      '%s.R.paired.fastq.gz' % ID, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:4:30:10:1:true' % ugap_path,
 	      'MINLEN:%s' % length]
     vcf_fh = open('%s.trimmomatic.out' % ID, 'w')
     log_fh = open('%s.trimmomatic.log' % ID, 'w')
@@ -211,7 +211,7 @@ def find_missing_coverages(depth, merged, lengths, name):
         if len(nohits)==len(allhits):
             print >> outfile, str(k)+"\t"+"N/A"+"\t"+"no_blast_hit"+"\t"+str(lengths.get(k))+"\t"+str(v)
     outfile.close()
-               
+
 def merge_blast_with_coverages(blast_report, coverages, lengths, name):
     from operator import itemgetter
     coverage_dict = {}
@@ -239,7 +239,7 @@ def merge_blast_with_coverages(blast_report, coverages, lengths, name):
             single_list.append(str(lengths.get(fields[0])))
             single_list.append(str(coverage_dict.get(fields[0])))
             out_list.append(single_list)
-            
+
     for alist in out_list:
         print >> outfile, "\t".join(alist)
 
@@ -260,10 +260,10 @@ def get_readFile_components(full_file_path):
     full_ext = ext2+ext
     return(file_path,file_name_before_ext,full_ext)
 
-def read_file_sets(dir_path):        
-    fileSets = {} 
+def read_file_sets(dir_path):
+    fileSets = {}
     forward_reads = {}
-    reverse_reads = {} 
+    reverse_reads = {}
     num_paired_readsets = 0
     num_single_readsets = 0
     for infile in glob.glob(os.path.join(dir_path, "*.fastq.gz")):
@@ -304,9 +304,9 @@ def read_file_sets(dir_path):
             fileSets[sample] = reverse_reads[sample] # no forward found
             num_single_readsets += 1
             logging.info('#Warning, could not find pair for read:' + reverse_reads[sample])
-                                
+
     if num_paired_readsets > 0:
-        logging.info('Total paired readsets found:' + str(num_paired_readsets))        
+        logging.info('Total paired readsets found:' + str(num_paired_readsets))
     if num_single_readsets > 0:
         logging.info('Total single reads found:' + str(num_single_readsets))
 
@@ -322,7 +322,7 @@ def get_sequence_length_dev(fastq_in):
     with GzipFile("%s" % fastq_in) as file:
         head = list(islice(file, 2))
     return len(head[1])
-       
+
 def clean_fasta(fasta_in, fasta_out):
     seqrecords=[]
     for record in SeqIO.parse(open(fasta_in, "U"), "fasta"):
@@ -355,12 +355,12 @@ def bwa(reference,read_1,read_2,sam_file, processors, log_file='',**my_opts):
            print log_file, 'could not open'
     else:
         log_fh = PIPE
- 
+
     try:
         sam_fh = open(sam_file, 'w')
     except:
         print sam_file, 'could not open'
- 
+
     bwa = Popen(mem_arguments, stderr=log_fh, stdout=sam_fh)
     bwa.wait()
 
@@ -389,7 +389,7 @@ def run_gatk(reference, processors, name, gatk):
     try:
         log_fh = open('%s.gatk.log' % name, 'w')
     except:
-        print 'could not open log file'        
+        print 'could not open log file'
     gatk_run = Popen(args, stderr=log_fh, stdout=vcf_fh)
     gatk_run.wait()
 
@@ -437,17 +437,17 @@ def sum_totals(input, name, output):
             coverages.append(float(fields[1]))
     print >> outfile, name, sum(coverages)/len(coverages)
     outfile.close()
-   
+
 rec=1
 
-def autoIncrement(): 
-    global rec 
-    pStart = 1  
-    pInterval = 1 
-    if (rec == 0):  
-        rec = pStart  
-    else:  
-        rec += pInterval  
+def autoIncrement():
+    global rec
+    pStart = 1
+    pInterval = 1
+    if (rec == 0):
+        rec = pStart
+    else:
+        rec += pInterval
         return rec
 
 def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff):
@@ -578,7 +578,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     if "NULL" not in blast_nt:
         slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),int(keep),"%s.chunks.fasta" % name)
         lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
-        subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out %s.blast.out" % (name, blast_nt, processors, name), shell=True) 
+        subprocess.check_call("blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out %s.blast.out" % (name, blast_nt, processors, name), shell=True)
         os.system("cp %s.blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (name, start_path, name))
         os.system("sort -u -k 1,1 %s.blast.out > %s.blast.uniques" % (name, name))
         merge_blast_with_coverages("%s.blast.uniques" % name, "%s_3_depth.txt" % name, lengths, name)
