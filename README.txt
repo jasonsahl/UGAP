@@ -2,9 +2,8 @@
 
 -Dependencies that MUST be installed by the user:
 
-1. SPAdes, must be version 3.5
-2. genomeCoverageBed (part of BEDTOOLS). Linux version included in /bin folder. If
-   incompatible with your version, you must replace this version with your binary.
+1. SPAdes, must be > version 3.5. Working on v3.7.1.
+2. genomeCoverageBed (part of BEDTOOLS). Linux version included in /bin folder. If incompatible with your version, you must replace this version with your binary.
 3. bwa (must have version that supports BWA-MEM algorithm)
 4. Samtools
 5. BioPython
@@ -12,13 +11,11 @@
 -Optional dependencies for full functionality
 
 1. BLAST+ (must have blastn in PATH). This is needed for troubleshooting mixtures
-2. Musket (only if you want to correct reads with this tool)
-
+2. Musket (only if you want to correct reads with this tool); not thoroughly tested
 
 -To run:
 
-*You need a directory with paired-end reads in *.fastq.gz format. Names need to be similar
-to what comes off Illumina sequencer (e.g. *R1_001.fastq.gz)
+*You need a directory with paired-end reads in *.fastq.gz format. Names need to be similar to what comes off Illumina sequencer (e.g. *R1_001.fastq.gz)
 
 *You need to edit the "ugap_prep.py" script to reflect your installation location:
 
