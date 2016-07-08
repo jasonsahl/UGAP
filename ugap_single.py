@@ -52,14 +52,14 @@ def test_truths(option, opt_str, value, parser):
 
 rec=1
 
-def autoIncrement(): 
-    global rec 
-    pStart = 1  
-    pInterval = 1 
-    if (rec == 0):  
-        rec = pStart  
-    else:  
-        rec += pInterval  
+def autoIncrement():
+    global rec
+    pStart = 1
+    pInterval = 1
+    if (rec == 0):
+        rec = pStart
+    else:
+        rec += pInterval
         return rec
 
 def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,processors,careful,ugap_path,blast_nt,cov_cutoff):
@@ -67,8 +67,8 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
     #GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
-    #updated to 1.12 on May 12, 2015
-    PILON_PATH=UGAP_PATH+"/bin/pilon-1.12.jar"
+    #updated to 1.17 on July 8, 2016
+    PILON_PATH=UGAP_PATH+"/bin/pilon-1.17.jar"
     if os.path.exists(UGAP_PATH):
         sys.path.append("%s" % UGAP_PATH)
     else:
@@ -178,4 +178,3 @@ if __name__ == "__main__":
     main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,
          options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path,options.blast_nt,
          options.cov_cutoff)
-    
