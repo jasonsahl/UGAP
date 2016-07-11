@@ -535,7 +535,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     make_bam("%s.sam" % name, name)
     print "running Pilon"
     try:
-        os.system("java -jar %s --threads %s --fix all,ambgit  --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
+        os.system("java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
     except:
         print "problem running Pilon. Exiting...."
         sys.exit()
