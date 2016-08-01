@@ -1,17 +1,17 @@
-#Instructions for using UGAP (see Manual for more detailed instructions)
+#Instructions for using UGAP
 
 -Dependencies that MUST be installed by the user:
 
 1. SPAdes, must be > version 3.5. Working on v3.7.1.
 2. genomeCoverageBed (part of BEDTOOLS). Linux version included in /bin folder. If incompatible with your version, you must replace this version with your binary.
-3. bwa (must have version that supports BWA-MEM algorithm)
-4. Samtools
-5. BioPython
+3. bwa (must have version that supports BWA-MEM algorithm). Tested version is 0.7.7
+4. Samtools - tested version is 0.1.19
+5. BioPython - tested version is 
 
 -Optional dependencies for full functionality
 
 1. BLAST+ (must have blastn in PATH). This is needed for troubleshooting mixtures
-2. Musket (only if you want to correct reads with this tool); not thoroughly tested
+2. Musket (only if you want to correct reads with this tool); not thoroughly tested and may not work properly
 
 -To run:
 
