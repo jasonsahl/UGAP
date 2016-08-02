@@ -56,7 +56,7 @@ def main(config_file, memory):
     UGAP_PATH=ugap_path
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
-    PILON_PATH=UGAP_PATH+"/bin/pilon-1.12.jar"
+    PILON_PATH=UGAP_PATH+"/bin/pilon-1.17.jar"
     start_dir = os.getcwd()
     start_path = os.path.abspath("%s" % start_dir)
     try:
@@ -74,7 +74,7 @@ def main(config_file, memory):
     if effective_jobs <=1:
         effective_jobs = 1
     effective_processors = int(int(processors)/effective_jobs)
-    os.chdir("%s/ugap_work_directory" % start_dir) 
+    os.chdir("%s/ugap_work_directory" % start_dir)
     keep_stuff = []
     def _perform_workflow(data):
         f = data
@@ -86,7 +86,7 @@ def main(config_file, memory):
     if "F" in keep_stuff:
         pass
     else:
-        os.sytem("rm -rf ugap_work_directory")
+        os.system("rm -rf ugap_work_directory")
 
 if __name__ == "__main__":
     usage="usage: %prog [options]"
@@ -105,4 +105,3 @@ if __name__ == "__main__":
             parser.print_help()
             exit(-1)
     main(options.config_file,options.memory)
-        
