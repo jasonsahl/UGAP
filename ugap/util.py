@@ -20,7 +20,7 @@ def subsample_reads(input_fastq,output_fastq):
     from gzip import GzipFile
     import gzip
     import random
-    number_to_sample = 4000000
+    number_to_sample = 20000000
     with GzipFile(input_fastq) as input:
         num_lines = sum([1 for line in input])
         total_records = int(num_lines / 4)
