@@ -38,14 +38,14 @@ def parse_config_file(config_file):
             datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10],fields[11]),)+datasets
     return datasets
 
-def send_jobs(datasets,my_mem,controller,queue):
+def send_jobs(datasets,my_mem,controller,queue,time):
     for data in datasets:
         if controller == "slurm":
             output, input = popen2('sbatch')
         else:
             output, input = popen2('qsub')
         job_name = "UGAP_%s" % data[0]
-        walltime = "48:00:00"
+        walltime = "%s:00:00" % time
         command = "python %s/ugap_single.py -n %s -f %s -v %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s" % (data[9],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11])
         if controller == "slurm":
             memory = "mem=%s" % my_mem
@@ -97,10 +97,10 @@ cd $PBS_O_WORKDIR
             print job_string
             print output.read()
 
-def main(config_file, memory, controller, queue):
+def main(config_file, memory, controller, queue, time):
     datasets=parse_config_file(config_file)
     my_mem = memory
-    send_jobs(datasets,my_mem, controller, queue)
+    send_jobs(datasets,my_mem, controller, queue, time)
 
 if __name__ == "__main__":
     usage="usage: %prog [options]"
@@ -117,6 +117,9 @@ if __name__ == "__main__":
     parser.add_option("-q", "--queue", dest="queue",
                       help="which queue to use?",
                       action="store", type="string")
+    parser.add_option("-t", "--time", dest="time",
+                      help="how much time to request? Defaults to 48[h]",
+                      action="store", type="int", default="48")
     options, args = parser.parse_args()
     mandatories = ["config_file"]
     for m in mandatories:
@@ -124,5 +127,4 @@ if __name__ == "__main__":
             print "\nMust provide %s.\n" %m
             parser.print_help()
             exit(-1)
-    main(options.config_file,options.memory,options.controller,options.queue)
-        
+    main(options.config_file,options.memory,options.controller,options.queue,options.time)
