@@ -20,6 +20,7 @@ def subsample_reads(input_fastq,output_fastq):
     from gzip import GzipFile
     import gzip
     import random
+    """I changed this on 8/15/2016: Testing to see if this is enough or whether we should still increase"""
     number_to_sample = 20000000
     with GzipFile(input_fastq) as input:
         num_lines = sum([1 for line in input])
