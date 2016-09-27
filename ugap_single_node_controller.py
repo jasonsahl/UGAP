@@ -56,12 +56,11 @@ def main(config_file, memory):
     UGAP_PATH=ugap_path
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
-    PILON_PATH=UGAP_PATH+"/bin/pilon-1.17.jar"
+    PILON_PATH=UGAP_PATH+"/bin/pilon-1.20.jar"
     start_dir = os.getcwd()
     start_path = os.path.abspath("%s" % start_dir)
     try:
         os.makedirs('%s/UGAP_assembly_results' % start_path)
-        #os.makedirs('%s/ugap_work_directory' % start_path)
     except OSError, e:
         if e.errno != errno.EEXIST:raise
     try:

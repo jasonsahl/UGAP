@@ -67,8 +67,8 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
     #GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
-    #updated to 1.17 on July 8, 2016
-    PILON_PATH=UGAP_PATH+"/bin/pilon-1.17.jar"
+    #updated to 1.20 on September 27th, 2016
+    PILON_PATH=UGAP_PATH+"/bin/pilon-1.20.jar"
     if os.path.exists(UGAP_PATH):
         sys.path.append("%s" % UGAP_PATH)
     else:
