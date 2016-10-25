@@ -493,7 +493,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         try:
             print "Removing phiX from reads with USEARCH"
             subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz" % (name,name), shell=True)
-            subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output %s.F.tmp.fastq -output2 %s.R.tmp.fastq" % (name,name,name,name), shell=True)
+            subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output %s.F.tmp.fastq -output2 %s.R.tmp.fastq > /dev/null 2>&1" % (name,name,name,name), shell=True)
             subprocess.check_call("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name), shell=True)
             subprocess.check_call("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name), shell=True)
             subprocess.check_call("gzip %s.F.paired.fastq %s.R.paired.fastq" % (name,name), shell=True)
