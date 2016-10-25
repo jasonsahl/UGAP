@@ -452,6 +452,7 @@ def autoIncrement():
         return rec
 
 def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,phiX_filter):
+    """This should, in theory, get rid of phiX if it is present, assuming it's not in the reference"""
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
         rv = subprocess.call(['which', 'bam2fastq'])
@@ -464,6 +465,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             subsample_reads("%s_2.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name)
         else:
             print "to deplete reads, you need to have bam2fastq installed. Reads will not be depleted"
+    """The Ks parameter is obsolete in Spade 3.7+, this will likely be removed in the future"""
     if int(get_sequence_length_dev(forward_path))<=200 and int(get_sequence_length_dev(forward_path))>=100:
         #Uses default K values, based on SPADes recs
         ks = "21,33,55,77"
@@ -486,6 +488,20 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         pass
     else:
         run_trimmomatic(TRIM_PATH, processors, "%s.F.tmp.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name, name, UGAP_PATH, length)
+    #Now seems like a good time to remove PhiX if present
+    if phiX_filter == "T":
+        try:
+            print "Removing phiX from reads with USEARCH"
+            subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz" % (name,name), shell=True)
+            subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output %s.F.tmp.fastq -output2 %s.R.tmp.fastq" % (name,name,name,name), shell=True)
+            subprocess.check_call("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name), shell=True)
+            subprocess.check_call("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name), shell=True)
+            subprocess.check_call("gzip %s.F.paired.fastq %s.R.paired.fastq" % (name,name, shell=True))
+        except:
+            print "usearch9 required for phiX filtering...exiting"
+            sys.exit()
+    else:
+        pass
     #This next section runs spades according to the input parameters
     if os.path.isfile("%s.spades.assembly.fasta" % name):
         pass
