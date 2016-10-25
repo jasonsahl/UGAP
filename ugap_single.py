@@ -62,7 +62,7 @@ def autoIncrement():
         rec += pInterval
         return rec
 
-def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,processors,careful,ugap_path,blast_nt,cov_cutoff):
+def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,processors,careful,ugap_path,blast_nt,cov_cutoff,filter_phiX):
     UGAP_PATH=ugap_path
     #GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
     PICARD_PATH=UGAP_PATH+"/bin/"
@@ -117,14 +117,14 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
     os.chdir("%s/%s.work_directory" % (start_path,name))
     if "NULL" not in reduce:
         if "NULL" not in blast_nt:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX)
         else:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX)
     else:
         if "NULL" not in blast_nt:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX)
         else:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff)
+            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX)
     os.chdir("%s" % start_path)
     if temp_files == "F":
         os.system("rm -rf %s.work_directory" % name)
@@ -168,6 +168,9 @@ if __name__ == "__main__":
     parser.add_option("-o", "--cov_cutoff", dest="cov_cutoff",
                       help="value to pass to SPAdes cov_cutoff option, default is 'auto', but can also be 'off'",
                       action="store", type="string", default="auto")
+    parser.add_option("-j", "--filter_phiX", dest="filter_phiX",
+                      help="use USEARCH to filter phiX from reads? defaults to T",
+                      action="store", type="string", default="T")
     options, args = parser.parse_args()
     mandatories = ["forward_read","name","reverse_read","ugap_path"]
     for m in mandatories:
@@ -177,4 +180,4 @@ if __name__ == "__main__":
             exit(-1)
     main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,
          options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path,options.blast_nt,
-         options.cov_cutoff)
+         options.cov_cutoff,options.filter_phiX)

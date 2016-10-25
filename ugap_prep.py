@@ -44,11 +44,14 @@ def test_truths(option, opt_str, value, parser):
         print "must select from T or F"
         sys.exit()
 
-def main(directory,error_corrector,keep,temp_files,reduce,processors,careful,blast_nt,cov_cutoff):
+def main(directory,error_corrector,keep,temp_files,reduce,processors,careful,blast_nt,cov_cutoff,phiX_filter):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
     reduce_path = os.path.abspath("%s" % reduce)
-    dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
+    if phiX_filter == "T":
+        dependencies = ['bwa','samtools','spades.py','genomeCoverageBed','usearch']
+    else:
+        dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
     for dependency in dependencies:
         ra = subprocess.check_call('which %s > /dev/null 2>&1' % dependency, shell=True)
         if ra == 0:
@@ -57,11 +60,11 @@ def main(directory,error_corrector,keep,temp_files,reduce,processors,careful,bla
             print "%s is not in your path, but needs to be!" % dependency
             sys.exit()
     for k,v in fileSets.iteritems():
-        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)
-    
+        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)+"\t"+str(phiX_filter)
+
 if __name__ == "__main__":
     usage="usage: %prog [options]"
-    parser = OptionParser(usage=usage) 
+    parser = OptionParser(usage=usage)
     parser.add_option("-d", "--directory", dest="directory",
                       help="directory to where .fastq.gz files are found [REQUIRED]",
                       action="callback", callback=test_dir, type="string")
@@ -89,8 +92,11 @@ if __name__ == "__main__":
     parser.add_option("-o", "--cov_cutoff", dest="cov_cutoff",
                       help="cov_cutoff value in SPAdes, can be integer or 'off', defaults to 'auto'",
                       action="store", type="string", default="auto")
+    parser.add_option("-z", "--phiX", dest="phiX_filter",
+                      help="filter for PhiX? Defaults to T, choose from T or F",
+                      action="callback", callback=test_truths, type="string", default="T")
     options, args = parser.parse_args()
-    
+
     mandatories = ["directory"]
     for m in mandatories:
         if not options.__dict__[m]:
@@ -99,4 +105,5 @@ if __name__ == "__main__":
             exit(-1)
 
     main(options.directory,options.error_corrector,options.keep,options.temp_files,
-         options.reduce,options.processors,options.careful,options.blast_nt,options.cov_cutoff)
+         options.reduce,options.processors,options.careful,options.blast_nt,options.cov_cutoff,
+         options.phiX_filter)
