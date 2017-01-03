@@ -64,7 +64,6 @@ def autoIncrement():
 
 def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,processors,careful,ugap_path,blast_nt,cov_cutoff,filter_phiX):
     UGAP_PATH=ugap_path
-    #GATK_PATH=UGAP_PATH+"/bin/GenomeAnalysisTK.jar"
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
     #updated to 1.20 on September 27th, 2016
