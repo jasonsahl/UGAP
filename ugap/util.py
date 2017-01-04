@@ -579,7 +579,8 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,name,keep,name,name,keep))
         else:
             small_name = rename_for_prokka(name_chars)
-            os.system("cp %s.%s.spades.assembly.fasta %s.prokka.fasta" % (name,keep,small_name))
+            #os.system("cp %s.%s.spades.assembly.fasta %s.prokka.fasta" % (name,keep,small_name))
+            rename_multifasta("%s.%s.spades.assembly.fasta" % (name,keep), small_name, "%s.prokka.fasta" % small_name)
             os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.prokka.fasta > /dev/null 2>&1" % (small_name,small_name,small_name,keep,small_name,small_name))
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
