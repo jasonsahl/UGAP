@@ -428,7 +428,8 @@ def rename_multifasta(fasta_in, prefix, fasta_out):
     handle.close()
 
 def rename_for_prokka(name_list):
-    reduced_name_list = name_list[:20]
+    """17 allows some room for the unique contig number"""
+    reduced_name_list = name_list[:17]
     new_name = "".join(reduced_name_list)
     return new_name
 
