@@ -567,10 +567,10 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s/UGAP_assembly_results/%s_final_assembly.fasta" % (start_path,name))
     try:
         #Runs Prokka, if it's installed
-        try:
-            os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name,keep))
-        except:
-            os.system("prokka --prefix %s --locustag %s -centre %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,name,keep,name,name,keep))
+        #try:
+        #os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name,keep))
+        #except:
+        os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,name,keep,name,name,keep))
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
         print "Prokka was not run, so no annotation files will be included"
