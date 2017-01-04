@@ -427,6 +427,11 @@ def rename_multifasta(fasta_in, prefix, fasta_out):
         print >> handle, record.seq
     handle.close()
 
+def rename_for_prokka(name_list):
+    reduced_name_list = name_list[:20]
+    new_name = "".join(reduced_name_list)
+    return new_name
+
 def sum_totals(input, name, output):
     outfile = open(output, "w")
     coverages = []
@@ -567,10 +572,15 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s/UGAP_assembly_results/%s_final_assembly.fasta" % (start_path,name))
     try:
         #Runs Prokka, if it's installed
-        #try:
-        #os.system("prokka --prefix %s --locustag %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,keep,name,name,keep))
-        #except:
-        os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,name,keep,name,name,keep))
+        name_chars = []
+        for letter in name:
+            name_chars.append(letter)
+        if len(name_chars)<=20:
+            os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,name,keep,name,name,keep))
+        else:
+            small_name = rename_for_prokka(name_chars)
+            os.system("cp %s.%s.spades.assembly.fasta %s.prokka.fasta" % (name,keep,small_name))
+            os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.prokka.fasta > /dev/null 2>&1" % (small_name,small_name,small_name,keep,small_name,small_name))
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
         print "Prokka was not run, so no annotation files will be included"
