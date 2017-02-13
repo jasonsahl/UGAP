@@ -179,13 +179,23 @@ def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_
         log_isg.logPrint("problem encountered with trimmomatic")
 
 def slice_assembly(infile, keep_length, outfile):
+    """Keep length will be 200"""
     input=open(infile, "rU")
     output = open(outfile, "w")
     start=0
     #end=keep_length
     for record in SeqIO.parse(input,"fasta"):
+        seqlength = len(record.seq)
         print >> output,">"+record.id+"\n",
-        print >> output, record.seq[start:keep_length]
+        if seqlength<250:
+            print >> output, record.seq[start:keep_length]
+        elif seqlength<350:
+            print >> output, record.seq[100:300]
+        elif seqlength<450:
+            print >> output, record.seq[200:400]
+        else:
+            print >> output, record.seq[200:400]
+
     input.close()
     output.close()
 
@@ -524,7 +534,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             else:
                 print "musket isn't in your path, but needs to be!"
                 sys.exit()
-            #Need to test again with Musket
+            #Support with Musket is questionable..may remove in the future
             subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
             subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
             subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
@@ -544,7 +554,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
     #Cleans up the names for downstream apps
     rename_multifasta("%s_cleaned.fasta" % name, name, "%s_renamed.fasta" % name)
-    """This section is actively being removed"""
     #Here I align reads to this new assembly
     subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
     #Index renamed.fasta for calling variants
@@ -561,6 +570,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         os.system("java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
     except:
         print "problem running Pilon. Exiting...."
+        #instead of exiting here, I could just change the name and keep going
         sys.exit()
     rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
     filter_seqs("%s_final_assembly.fasta" % name, keep, name)
@@ -569,7 +579,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         subprocess.check_call("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep), shell=True, stderr=open(os.devnull, "w"))
     except:
         print "problem fixing missing spaces"
-        pass
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s/UGAP_assembly_results/%s_final_assembly.fasta" % (start_path,name))
     try:
         #Runs Prokka, if it's installed
@@ -579,6 +588,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         if len(name_chars)<=20:
             os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,name,name,keep,name,name,keep))
         else:
+            """Tries to fix the short read limitation. Need to test"""
             small_name = rename_for_prokka(name_chars)
             #os.system("cp %s.%s.spades.assembly.fasta %s.prokka.fasta" % (name,keep,small_name))
             rename_multifasta("%s.%s.spades.assembly.fasta" % (name,keep), small_name, "%s.prokka.fasta" % small_name)
