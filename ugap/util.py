@@ -513,7 +513,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             #subprocess.check_call("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name), shell=True)
             #subprocess.check_call("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name), shell=True)
             #subprocess.check_call("gzip %s.F.paired.fastq %s.R.paired.fastq" % (name,name), shell=True)
-            subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output >(gzip > %s.F.tmp.fastq) -output2 >(gzip > %s.R.tmp.fastq)" % (name,name,name,name), shell=True)
+            subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output >(gzip > %s.F.tmp.fastq.gz) -output2 >(gzip > %s.R.tmp.fastq.gz)" % (name,name,name,name), shell=True)
         except:
             print "usearch9 required for phiX filtering...exiting"
             sys.exit()
@@ -528,26 +528,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
                 subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
             else:
                 subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-        elif error_corrector=="musket":
-            ab = subprocess.call(['which', 'musket'])
-            if ab == 0:
-                pass
-            else:
-                print "musket isn't in your path, but needs to be!"
-                sys.exit()
-            #Support with Musket is questionable..may remove in the future
-            subprocess.check_call("musket -k 17 8000000 -p %s -omulti %s -inorder %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (processors,name,name,name), shell=True)
-            subprocess.check_call("mv %s.0 %s.0.musket.fastq.gz" % (name,name), shell=True)
-            subprocess.check_call("mv %s.1 %s.1.musket.fastq.gz" % (name,name), shell=True)
-            if careful == "T":
-                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-            else:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1  %s.0.musket.fastq.gz -2 %s.1.musket.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-        else:
-            if careful == "T":
-                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-            else:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --only-assembler -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
         os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     #filters contigs by a user-defined length threshold, defaults to 200nts
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
@@ -555,17 +535,18 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
     #Cleans up the names for downstream apps
     rename_multifasta("%s_cleaned.fasta" % name, name, "%s_renamed.fasta" % name)
-    #Here I align reads to this new assembly
+    #Here I align reads to this new assembly: 1st instance of read alignment
     subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
     #Index renamed.fasta for calling variants
     os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
     #run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
     if "NULL" not in reduce:
-        run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
+        #run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
+        subprocess.check_call("bwa mem -R '@RG\tID:${%s}\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s_1.fastq.gz %s_2.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,processors,name,name,processors,name), shell=True)
     else:
         #align depleted reads if the reduced option is selected
         run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
-    make_bam("%s.sam" % name, name)
+    #make_bam("%s.sam" % name, name)
     print "running Pilon"
     try:
         os.system("java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
