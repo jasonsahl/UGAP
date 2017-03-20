@@ -506,17 +506,17 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         run_trimmomatic(TRIM_PATH, processors, "%s.F.tmp.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name, name, UGAP_PATH, length)
     #Now seems like a good time to remove PhiX if present
     if phiX_filter == "T":
-        try:
-            print "Removing phiX from reads with USEARCH"
-            subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz" % (name,name), shell=True)
-            #subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output %s.F.tmp.fastq -output2 %s.R.tmp.fastq > /dev/null 2>&1" % (name,name,name,name), shell=True)
-            #subprocess.check_call("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name), shell=True)
-            #subprocess.check_call("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name), shell=True)
-            #subprocess.check_call("gzip %s.F.paired.fastq %s.R.paired.fastq" % (name,name), shell=True)
-            subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output >(gzip > %s.F.tmp.fastq.gz) -output2 >(gzip > %s.R.tmp.fastq.gz)" % (name,name,name,name), shell=True)
-        except:
-            print "usearch9 required for phiX filtering...exiting"
-            sys.exit()
+        #try:
+        #    print "Removing phiX from reads with USEARCH"
+        subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz" % (name,name), shell=True)
+        #subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output %s.F.tmp.fastq -output2 %s.R.tmp.fastq > /dev/null 2>&1" % (name,name,name,name), shell=True)
+        #subprocess.check_call("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name), shell=True)
+        #subprocess.check_call("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name), shell=True)
+        #subprocess.check_call("gzip %s.F.paired.fastq %s.R.paired.fastq" % (name,name), shell=True)
+        subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output >(gzip > %s.F.tmp.fastq.gz) -output2 >(gzip > %s.R.tmp.fastq.gz)" % (name,name,name,name), shell=True)
+        #except:
+        #    print "usearch9 required for phiX filtering...exiting"
+        #    sys.exit()
     else:
         pass
     #This next section runs spades according to the input parameters
