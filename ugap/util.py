@@ -527,7 +527,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         #    devnull.close()
         #devnull = open("/dev/null", "w")
         #os.system('usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output >(gzip > %s.F.tmp.fastq.gz) -output2 >(gzip > %s.R.tmp.fastq.gz)' % (name,name,name,name))
-        cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"%s.R.paired.fastq" % name,"-output",">(gzip > %s.F.tmp.fastq.gz)" % name,
+        cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-reverse","%s.R.paired.fastq" % name,"-output",">(gzip > %s.F.tmp.fastq.gz)" % name,
               "-output2",">(gzip > %s.R.tmp.fastq.gz)" % name]
         print cmd
         #subprocess.call(cmd,stdout=devnull,stderr=devnull)
