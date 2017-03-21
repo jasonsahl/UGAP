@@ -554,8 +554,8 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             if careful == "T":
                 subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
             else:
-                subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name),
-    os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
+                subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+        os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
     #This uses biopython to pretty up the sequences, but not sure it would affect downstream usability
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
