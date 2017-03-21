@@ -473,6 +473,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         #Reads will be depleted in relation to a given reference
         rv = subprocess.call(['which', 'bam2fastq'])
         if rv == 0:
+            #I can make this function more efficient
             run_bwa(forward_path, reverse_path, processors, name, reduce)
             os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
             os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > %s.reduce_results.txt" % (name,name,name))
@@ -513,7 +514,20 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         #subprocess.check_call("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name), shell=True)
         #subprocess.check_call("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name), shell=True)
         #subprocess.check_call("gzip %s.F.paired.fastq %s.R.paired.fastq" % (name,name), shell=True)
-        os.system('usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output >(gzip > %s.F.tmp.fastq.gz) -output2 >(gzip > %s.R.tmp.fastq.gz)' % (name,name,name,name))
+        #def uclust_sort(usearch):
+        #    """sort with Usearch. Updated to V6"""
+        #    devnull = open("/dev/null", "w")
+        #    cmd = ["%s" % usearch,
+        #           "-sortbylength", "all_gene_seqs.out",
+        #           "-output", "tmp_sorted.txt"]
+        #    subprocess.call(cmd,stdout=devnull,stderr=devnull)
+        #    devnull.close()
+        #devnull = open("/dev/null", "w")
+        #os.system('usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output >(gzip > %s.F.tmp.fastq.gz) -output2 >(gzip > %s.R.tmp.fastq.gz)' % (name,name,name,name))
+        cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"%s.R.paired.fastq" % name,"-output",">(gzip > %s.F.tmp.fastq.gz)" % name,
+              "-output2",">(gzip > %s.R.tmp.fastq.gz)" % name]
+        subprocess.call(cmd,stdout=devnull,stderr=devnull)
+        devnull.close()
         #except:
         #    print "usearch9 required for phiX filtering...exiting"
         #    sys.exit()
