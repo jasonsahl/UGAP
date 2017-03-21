@@ -533,7 +533,8 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         #subprocess.call(cmd,stdout=devnull,stderr=devnull)
         subprocess.call(cmd)
         os.system("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name))
-        
+        os.system("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name))
+        os.system("pigz *.paired.fastq")
         #devnull.close()
         #except:
         #    print "usearch9 required for phiX filtering...exiting"
