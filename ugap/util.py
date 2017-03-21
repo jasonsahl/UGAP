@@ -495,53 +495,53 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     #Gets the sequence length independently for each genomes
     length = (int(get_sequence_length_dev(forward_path)/2))
     #Sub-sample reads to 4 million in each direction: at some point this will become a tunable parameter
+    #Checkpoint 1: subsample reads
     if os.path.isfile("%s.F.tmp.fastq.gz" % name):
         pass
     else:
         subsample_reads(forward_path, "%s.F.tmp.fastq.gz" % name)
         subsample_reads(reverse_path, "%s.R.tmp.fastq.gz" % name)
     #If trimmomatic has already been run, don't run again, trimmomatic requires PAIRED reads
+    #Checkpoint 2: trimmomatic, usearch
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
     else:
         run_trimmomatic(TRIM_PATH, processors, "%s.F.tmp.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name, name, UGAP_PATH, length)
-    #Now seems like a good time to remove PhiX if present
-    if phiX_filter == "T":
-        #try:
-        #    print "Removing phiX from reads with USEARCH"
-        try:
-            subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
-        except:
-            pass
-        #subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output %s.F.tmp.fastq -output2 %s.R.tmp.fastq > /dev/null 2>&1" % (name,name,name,name), shell=True)
-        #subprocess.check_call("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name), shell=True)
-        #subprocess.check_call("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name), shell=True)
-        #subprocess.check_call("gzip %s.F.paired.fastq %s.R.paired.fastq" % (name,name), shell=True)
-        #def uclust_sort(usearch):
-        #    """sort with Usearch. Updated to V6"""
-        #    devnull = open("/dev/null", "w")
-        #    cmd = ["%s" % usearch,
-        #           "-sortbylength", "all_gene_seqs.out",
-        #           "-output", "tmp_sorted.txt"]
-        #    subprocess.call(cmd,stdout=devnull,stderr=devnull)
-        #    devnull.close()
-        #devnull = open("/dev/null", "w")
-        #os.system('usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output >(gzip > %s.F.tmp.fastq.gz) -output2 >(gzip > %s.R.tmp.fastq.gz)' % (name,name,name,name))
-        cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-reverse","%s.R.paired.fastq" % name,"-output","%s.F.tmp.fastq" % name,
-              "-output2","%s.R.tmp.fastq" % name]
-        #print cmd
-        #subprocess.call(cmd,stdout=devnull,stderr=devnull)
-        subprocess.call(cmd)
-        os.system("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name))
-        os.system("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name))
-        os.system("pigz *.paired.fastq")
-        #devnull.close()
-        #except:
-        #    print "usearch9 required for phiX filtering...exiting"
-        #    sys.exit()
-    else:
-        pass
+        if phiX_filter == "T":
+            #try:
+            #    print "Removing phiX from reads with USEARCH"
+            try:
+                subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
+            except:
+                pass
+            #subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output %s.F.tmp.fastq -output2 %s.R.tmp.fastq > /dev/null 2>&1" % (name,name,name,name), shell=True)
+            #subprocess.check_call("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name), shell=True)
+            #subprocess.check_call("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name), shell=True)
+            #subprocess.check_call("gzip %s.F.paired.fastq %s.R.paired.fastq" % (name,name), shell=True)
+            #def uclust_sort(usearch):
+            #    """sort with Usearch. Updated to V6"""
+            #    devnull = open("/dev/null", "w")
+            #    cmd = ["%s" % usearch,
+            #           "-sortbylength", "all_gene_seqs.out",
+            #           "-output", "tmp_sorted.txt"]
+            #    subprocess.call(cmd,stdout=devnull,stderr=devnull)
+            #    devnull.close()
+            #devnull = open("/dev/null", "w")
+            #os.system('usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output >(gzip > %s.F.tmp.fastq.gz) -output2 >(gzip > %s.R.tmp.fastq.gz)' % (name,name,name,name))
+            cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-reverse","%s.R.paired.fastq" % name,"-output","%s.F.tmp.fastq" % name,
+                  "-output2","%s.R.tmp.fastq" % name]
+            #print cmd
+            #subprocess.call(cmd,stdout=devnull,stderr=devnull)
+            subprocess.call(cmd)
+            os.system("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name))
+            os.system("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name))
+            os.system("pigz *.paired.fastq")
+            #devnull.close()
+            #except:
+            #    print "usearch9 required for phiX filtering...exiting"
+            #    sys.exit()
     #This next section runs spades according to the input parameters
+    #Checkpoint 3: Spades assembly
     if os.path.isfile("%s.spades.assembly.fasta" % name):
         pass
     else:
@@ -550,7 +550,11 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
                 subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
             else:
                 subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-        #need contingency unless
+        else:
+            if careful == "T":
+                subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            else:
+                subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name),
         os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
     #filters contigs by a user-defined length threshold, defaults to 200nts
     filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
@@ -564,12 +568,13 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
     #run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
     if "NULL" not in reduce:
-        #run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
+        run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
         subprocess.check_call("bwa mem -R '@RG\tID:${%s}\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s_1.fastq.gz %s_2.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,processors,name,name,processors,name), shell=True)
     else:
-        #align depleted reads if the reduced option is selected
-        run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
-    #make_bam("%s.sam" % name, name)
+        #align depleted reads if the reduced option is selected. This section is currently being tested
+        subprocess.check_call("bwa mem -R '@RG\tID:${%s}\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s.F.paired.fastq.gz  %s.F.paired.fastq.gz  | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,processors,name,name,processors,name), shell=True)
+        #run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
+        #make_bam("%s.sam" % name, name)
     print "running Pilon"
     try:
         os.system("java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
@@ -603,14 +608,14 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         print "Prokka was not run, so no annotation files will be included"
     #Copies these files to your output directory, whether or not the previous commands were successful
     os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
-    #I have to re-run bwa on the new assembly, as the contig lengths can change from the original SPAdes assembly
+    #I need to check the number of contigs, then decide whether or not to run bwa again
     os.system("bwa index %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,keep))
     if "NULL" not in reduce:
         run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s.%s.spades.assembly.fasta" % (name,keep))
     else:
         run_bwa(forward_path,reverse_path,processors,name,"%s.%s.spades.assembly.fasta" % (name,keep))
     make_bam("%s.sam" % name, name)
-    #This is for the per contig coverage routine. I have to re-run BWA because I renamed contigs and potentially the numbers don't match
+    #This is for the per contig coverage routine. This can likely be replaced
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep), name)
     subprocess.check_call("tr ' ' '\t' < %s.tmp.txt > %s.genome_size.txt" % (name, name), shell=True)
     get_coverage("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
@@ -621,6 +626,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     doc("%s.coverage.out" % name, "%s.genome_size.txt" % name, name, 3)
     os.system("cp %s_3_depth.txt %s/UGAP_assembly_results" % (name,start_path))
     sum_totals("%s_3_depth.txt" % name, name, "%s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
+    #End of section that can likely be replaced
     if "NULL" not in blast_nt:
         slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),int(keep),"%s.chunks.fasta" % name)
         lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
