@@ -567,11 +567,11 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
     #run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
     if "NULL" not in reduce:
-        run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
-        subprocess.check_call("bwa mem -R '@RG\tID:${%s}\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s_1.fastq.gz %s_2.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,processors,name,name,processors,name), shell=True)
+        #run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
+        subprocess.check_call("bwa mem %s_renamed.fasta -R '@RG\tID:${%s}\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s_1.fastq.gz %s_2.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,name,processors,name,name,processors,name), shell=True)
     else:
         #align depleted reads if the reduced option is selected. This section is currently being tested
-        subprocess.check_call("bwa mem -R '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s.F.paired.fastq.gz  %s.F.paired.fastq.gz  | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,processors,name,name,processors,name), shell=True)
+        subprocess.check_call("bwa mem %s_renamed.fasta -R '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s.F.paired.fastq.gz  %s.F.paired.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,name,processors,name,name,processors,name), shell=True)
         #run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
         #make_bam("%s.sam" % name, name)
     print "running Pilon"
