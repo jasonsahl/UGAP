@@ -352,7 +352,8 @@ def filter_seqs(fasta_in, keep, name):
     output_handle.close()
 
 def bwa(reference,read_1,read_2,sam_file, processors, log_file='',**my_opts):
-    mem_arguments = ['bwa', 'mem', '-v', '2', '-M', '-t', '%s' % processors, "|", "samtools", "view", "-uS", "-"]
+    mem_arguments = ['bwa','mem','-v','2','-M','-t','%s' % processors,"|","samtools","view","-uS","-",
+                     "|","samtools","sort","-@","4","-","Bacillus-anthracis-A4598_renamed.bam"]
     for opt in my_opts.items():
         mem_arguments.extend(opt)
     if "null" in read_2:
