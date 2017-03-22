@@ -352,7 +352,7 @@ def filter_seqs(fasta_in, keep, name):
     output_handle.close()
 
 def bwa(reference,read_1,read_2,sam_file, processors, log_file='',**my_opts):
-    mem_arguments = ['bwa', 'mem', '-v', '2', '-M', '-t', '%s' % processors]
+    mem_arguments = ['bwa', 'mem', '-v', '2', '-M', '-t', '%s' % processors, "|", "samtools", "view", "-uS", "-"]
     for opt in my_opts.items():
         mem_arguments.extend(opt)
     if "null" in read_2:
@@ -571,9 +571,8 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         subprocess.check_call("bwa mem %s_renamed.fasta -R '@RG\tID:${%s}\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s_1.fastq.gz %s_2.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,name,processors,name,name,processors,name), shell=True)
     else:
         #align depleted reads if the reduced option is selected. This section is currently being tested
-        read_group = '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' % name
-        subprocess.check_call("bwa mem %s_renamed.fasta -R %s -v 2 -M -t %s %s.F.paired.fastq.gz  %s.F.paired.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,read_group,processors,name,name,processors,name), shell=True)
-        #run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
+        #subprocess.check_call("bwa mem %s_renamed.fasta -R %s -v 2 -M -t %s %s.F.paired.fastq.gz  %s.F.paired.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,read_group,processors,name,name,processors,name), shell=True)
+        run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
         #make_bam("%s.sam" % name, name)
     print "running Pilon"
     try:
