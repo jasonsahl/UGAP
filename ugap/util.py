@@ -351,14 +351,16 @@ def filter_seqs(fasta_in, keep, name):
     SeqIO.write(kept_sequences, output_handle, "fasta")
     output_handle.close()
 
-def bwa(reference,read_1,read_2,sam_file, processors, log_file='',**my_opts):
+def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts):
     mem_arguments = ['bwa','mem','-v','2','-M','-t','%s' % processors,"-R","'@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt'" % name]
     if "null" in read_2:
         mem_arguments.extend([reference,read_1])
     else:
         mem_arguments.extend([reference,read_1,read_2])
-    for opt in my_opts.items():
-        mem_arguments.extend(opt)
+    mem_arguments.extend(my_opts)
+    #for opt in my_opts.items():
+    #    mem_arguments.extend(opt)
+
     if log_file:
        try:
            log_fh = open(log_file, 'w')
@@ -379,7 +381,7 @@ def bwa(reference,read_1,read_2,sam_file, processors, log_file='',**my_opts):
 def run_bwa(read_1, read_2, processors, name, reference):
     #read_group = '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' % name
     other_opts = ["|","samtools","view","-uS","-","|","samtools","sort","-@","4","-","Bacillus-anthracis-A4598_renamed.bam"]
-    bwa(reference,read_1,read_2,"%s.sam" % name,processors,log_file='sam.log',**{" ".join(other_opts)})
+    bwa(reference,read_1,read_2,"%s.sam" % name,processors,"sam.log",other_opts)
 
 def make_bam(in_sam, name):
     subprocess.check_call("samtools view -h -b -S %s > %s.1.bam 2> /dev/null" % (in_sam, name), shell=True)
