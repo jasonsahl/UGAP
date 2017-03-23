@@ -352,7 +352,7 @@ def filter_seqs(fasta_in, keep, name):
     output_handle.close()
 
 def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts,name):
-    mem_arguments = ['bwa','mem','-v','2','-M','-t','%s' % processors,"-R","'@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt'" % name]
+    mem_arguments = ['bwa','mem','-v','2','-M','-t','%s' % processors]
     if "null" in read_2:
         mem_arguments.extend([reference,read_1])
     else:
@@ -572,7 +572,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     #run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
     if "NULL" not in reduce:
         #run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
-        subprocess.check_call("bwa mem %s_renamed.fasta -R '@RG\tID:${%s}\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s_1.fastq.gz %s_2.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,name,processors,name,name,processors,name), shell=True)
+        subprocess.check_call("bwa mem %s_renamed.fasta -R '@RG\tID:${%s}\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s_1.fastq.gz %s_2.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed'" % (name,name,processors,name,name,processors,name), shell=True)
     else:
         #align depleted reads if the reduced option is selected. This section is currently being tested
         #subprocess.check_call("bwa mem %s_renamed.fasta -R %s -v 2 -M -t %s %s.F.paired.fastq.gz  %s.F.paired.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,read_group,processors,name,name,processors,name), shell=True)
