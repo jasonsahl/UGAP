@@ -353,7 +353,7 @@ def filter_seqs(fasta_in, keep, name):
 
 def bwa(reference,read_1,read_2,sam_file, processors, log_file='',**my_opts):
     mem_arguments = ['bwa','mem','-v','2','-M','-t','%s' % processors]
-        mem_arguments.extend(opt)
+    mem_arguments.extend(opt)
     if "null" in read_2:
         mem_arguments.extend([reference,read_1])
     else:
