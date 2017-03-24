@@ -142,6 +142,10 @@ def get_coverage(bam, size, name):
     """does the actual work"""
     subprocess.check_call("genomeCoverageBed -d -ibam %s -g %s > %s.tmp.out" % (bam,size,name), shell=True)
 
+def get_coverage_dev(bam, size, name):
+    """does the actual work"""
+    subprocess.check_call("samtools depth %s > %s.tmp.out" % (bam,name), shell=True)
+
 def remove_column(temp_file, name):
     infile = open(temp_file, "rU")
     outfile = open("%s.coverage.out" % name, "w")
@@ -559,7 +563,8 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     #This is for the per contig coverage routine. This can likely be replaced
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep), name)
     subprocess.check_call("tr ' ' '\t' < %s.tmp.txt > %s.genome_size.txt" % (name, name), shell=True)
-    get_coverage("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
+    #get_coverage("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
+    get_coverage_dev("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
     remove_column("%s.tmp.out" % name, name)
     sum_coverage("%s.coverage.out" % name, 3, name)
     merge_files_by_column(0,"%s.genome_size.txt" % name, "%s.amount_covered.txt" % name, "%s.results.txt" % name)
