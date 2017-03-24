@@ -357,6 +357,7 @@ def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts,name):
         mem_arguments.extend([reference,read_1])
     else:
         mem_arguments.extend([reference,read_1,read_2])
+    mem_arguments.extend([">","/dev/null","2>&1"])
     mem_arguments.extend(my_opts)
     #for opt in my_opts.items():
     #    mem_arguments.extend(opt)
@@ -384,55 +385,6 @@ def run_bwa(read_1, read_2, processors, name, reference):
     #read_group = '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' % name
     other_opts = ["|","samtools","view","-uS","-","|","samtools","sort","-@","4","-","%s_renamed" % name,">","/dev/null","2>&1"]
     bwa(reference,read_1,read_2,"%s.sam" % name,processors,"sam.log",other_opts,name)
-
-def make_bam(in_sam, name):
-    subprocess.check_call("samtools view -h -b -S %s > %s.1.bam 2> /dev/null" % (in_sam, name), shell=True)
-    subprocess.check_call("samtools view -u -h -F4 -o %s.2.bam %s.1.bam > /dev/null 2>&1" % (name,name), shell=True)
-    subprocess.check_call("samtools view -h -b -q1 -F4 -o %s.3.bam %s.2.bam > /dev/null 2>&1" % (name,name), shell=True)
-    subprocess.check_call("samtools sort %s.3.bam %s_renamed > /dev/null 2>&1" % (name,name), shell=True)
-    subprocess.check_call("samtools index %s_renamed.bam > /dev/null 2>&1" % name, shell=True)
-    subprocess.check_call("rm %s.1.bam %s.2.bam %s.3.bam" % (name,name,name), shell=True)
-
-def run_gatk(reference, processors, name, gatk):
-    args = ['java', '-jar', '%s' % gatk, '-T', 'UnifiedGenotyper',
-            '-R', '%s' % reference, '-nt', '%s' % processors,'-S', 'silent',
-            '-mbq', '17', '-ploidy', '1', '-out_mode', 'EMIT_VARIANTS_ONLY',
-            '-stand_call_conf', '100', '-stand_emit_conf', '100', '-I', '%s_renamed.bam' % name,
-            '-rf', 'BadCigar']
-    try:
-        vcf_fh = open('%s.gatk.out' % name, 'w')
-    except:
-        print 'could not open gatk file'
-    try:
-        log_fh = open('%s.gatk.log' % name, 'w')
-    except:
-        print 'could not open log file'
-    gatk_run = Popen(args, stderr=log_fh, stdout=vcf_fh)
-    gatk_run.wait()
-
-def parse_vcf(vcf, coverage, proportion):
-    vcf_in = open(vcf, "U")
-    vcf_out = open("filtered.vcf", "w")
-    to_fix = ()
-    for line in vcf_in:
-        if line.startswith('#'):
-           continue
-        fields=line.split()
-        if "INFO" not in fields[0]:
-            snp_fields=fields[9].split(':')
-            if int(len(snp_fields))>2:
-                prop_fields=snp_fields[1].split(',')
-                if int(snp_fields[2])>=coverage:
-                    if int(prop_fields[1])/int(snp_fields[2])>=float(proportion):
-                        print >> vcf_out, line,
-                        to_fix=((fields[0],fields[1],fields[4]),)+to_fix
-            else:
-                pass
-        else:
-            continue
-    vcf_in.close()
-    vcf_out.close()
-    return to_fix
 
 def rename_multifasta(fasta_in, prefix, fasta_out):
     """rename mutli-fasta to something meaningful"""
@@ -520,32 +472,16 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
                 subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
             except:
                 pass
-            #subprocess.check_call("usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output %s.F.tmp.fastq -output2 %s.R.tmp.fastq > /dev/null 2>&1" % (name,name,name,name), shell=True)
-            #subprocess.check_call("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name), shell=True)
-            #subprocess.check_call("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name), shell=True)
-            #subprocess.check_call("gzip %s.F.paired.fastq %s.R.paired.fastq" % (name,name), shell=True)
-            #def uclust_sort(usearch):
-            #    """sort with Usearch. Updated to V6"""
-            #    devnull = open("/dev/null", "w")
-            #    cmd = ["%s" % usearch,
-            #           "-sortbylength", "all_gene_seqs.out",
-            #           "-output", "tmp_sorted.txt"]
-            #    subprocess.call(cmd,stdout=devnull,stderr=devnull)
-            #    devnull.close()
-            #devnull = open("/dev/null", "w")
-            #os.system('usearch -filter_phix %s.F.paired.fastq -reverse %s.R.paired.fastq -output >(gzip > %s.F.tmp.fastq.gz) -output2 >(gzip > %s.R.tmp.fastq.gz)' % (name,name,name,name))
             cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-reverse","%s.R.paired.fastq" % name,"-output","%s.F.tmp.fastq" % name,
                   "-output2","%s.R.tmp.fastq" % name]
-            #print cmd
-            #subprocess.call(cmd,stdout=devnull,stderr=devnull)
-            subprocess.call(cmd)
-            os.system("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name))
-            os.system("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name))
-            os.system("pigz *.paired.fastq")
-            #devnull.close()
-            #except:
-            #    print "usearch9 required for phiX filtering...exiting"
-            #    sys.exit()
+            try:
+                subprocess.call(cmd)
+                os.system("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name))
+                os.system("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name))
+                os.system("pigz *.paired.fastq")
+            except:
+                print "usearch9 required for phiX filtering...exiting"
+                sys.exit()
     #This next section runs spades according to the input parameters
     #Checkpoint 3: Spades assembly
     if os.path.isfile("%s.spades.assembly.fasta" % name):
@@ -573,14 +509,12 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
     #run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
     if "NULL" not in reduce:
-        #run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
-        subprocess.check_call("bwa mem %s_renamed.fasta -R '@RG\tID:${%s}\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' -v 2 -M -t %s %s_1.fastq.gz %s_2.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed'" % (name,name,processors,name,name,processors,name), shell=True)
+        run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
+        os.system("samtools index %s_renamed.bam" % name)
     else:
         #align depleted reads if the reduced option is selected. This section is currently being tested
-        #subprocess.check_call("bwa mem %s_renamed.fasta -R %s -v 2 -M -t %s %s.F.paired.fastq.gz  %s.F.paired.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,read_group,processors,name,name,processors,name), shell=True)
         run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
         os.system("samtools index %s_renamed.bam" % name)
-        #make_bam("%s.sam" % name, name)
     print "running Pilon"
     try:
         print "java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name)
