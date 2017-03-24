@@ -382,7 +382,7 @@ def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts,name):
 
 def run_bwa(read_1, read_2, processors, name, reference):
     #read_group = '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' % name
-    other_opts = ["|","samtools","view","-uS","-","|","samtools","sort","-@","4","-","%s_renamed" % name]
+    other_opts = ["|","samtools","view","-uS","-","|","samtools","sort","-@","4","-","%s_renamed" % name,">","/dev/null","2>&1"]
     bwa(reference,read_1,read_2,"%s.sam" % name,processors,"sam.log",other_opts,name)
 
 def make_bam(in_sam, name):
@@ -582,6 +582,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         #make_bam("%s.sam" % name, name)
     print "running Pilon"
     try:
+        print "java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name)
         os.system("java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
     except:
         print "problem running Pilon. Exiting...."
