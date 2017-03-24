@@ -579,6 +579,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         #align depleted reads if the reduced option is selected. This section is currently being tested
         #subprocess.check_call("bwa mem %s_renamed.fasta -R %s -v 2 -M -t %s %s.F.paired.fastq.gz  %s.F.paired.fastq.gz | samtools view -uS - | samtools sort -@ '%s - '%s_renamed.bam'" % (name,read_group,processors,name,name,processors,name), shell=True)
         run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
+        os.system("samtools index %s_renamed.bam" % name)
         #make_bam("%s.sam" % name, name)
     print "running Pilon"
     try:
