@@ -471,9 +471,10 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             except:
                 pass
             cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-reverse","%s.R.paired.fastq" % name,"-output","%s.F.tmp.fastq" % name,
-                  "-output2","%s.R.tmp.fastq" % name,">","/dev/null 2>&1"]
+                  "-output2","%s.R.tmp.fastq" % name]
             try:
-                subprocess.call(cmd)
+                devnull = open("/dev/null", "w")
+                subprocess.call(cmd, stderr=devnull, stdout=devnull)
                 os.system("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name))
                 os.system("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name))
                 os.system("pigz *.paired.fastq")
