@@ -143,7 +143,7 @@ def get_coverage(bam, size, name):
     subprocess.check_call("genomeCoverageBed -d -ibam %s -g %s > %s.tmp.out" % (bam,size,name), shell=True)
 
 def get_coverage_dev(bam, size, name):
-    """does the actual work"""
+    """trying out a variation, reducing the number of dependencies"""
     subprocess.check_call("samtools depth %s > %s.tmp.out" % (bam,name), shell=True)
 
 def remove_column(temp_file, name):
@@ -382,7 +382,7 @@ def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts,name):
     #print mem_arguments
     arg_string = " ".join(mem_arguments)
     #os.system("%s > /dev/null 2>&1" % arg_string)
-    subprocess.call("%s" % arg_string, shell=True, stdout = sam_fh, stderr = sam_fh)
+    subprocess.call("%s" % arg_string, shell=True, stdout = log_fh, stderr = log_fh)
     #bwa = Popen(mem_arguments, stderr=log_fh, stdout=sam_fh)
     #bwa.wait()
 
