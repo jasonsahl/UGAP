@@ -357,7 +357,7 @@ def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts,name):
         mem_arguments.extend([reference,read_1])
     else:
         mem_arguments.extend([reference,read_1,read_2])
-    mem_arguments.extend([">","/dev/null","2>&1"])
+    #mem_arguments.extend([">","/dev/null","2>&1"])
     mem_arguments.extend(my_opts)
     #for opt in my_opts.items():
     #    mem_arguments.extend(opt)
