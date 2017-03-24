@@ -377,13 +377,13 @@ def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts,name):
 
     #print mem_arguments
     arg_string = " ".join(mem_arguments)
-    os.system("%s" % arg_string)
+    os.system("%s > /dev/null 2>&1" % arg_string)
     #bwa = Popen(mem_arguments, stderr=log_fh, stdout=sam_fh)
     #bwa.wait()
 
 def run_bwa(read_1, read_2, processors, name, reference):
     #read_group = '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' % name
-    other_opts = ["|","samtools","view","-uS","-","|","samtools","sort","-@","4","-","%s_renamed" % name,">","/dev/null","2>&1"]
+    other_opts = ["|","samtools","view","-uS","-","|","samtools","sort","-@","4","-","%s_renamed" % name]
     bwa(reference,read_1,read_2,"%s.sam" % name,processors,"sam.log",other_opts,name)
 
 def rename_multifasta(fasta_in, prefix, fasta_out):
