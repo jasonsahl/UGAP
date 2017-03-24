@@ -620,8 +620,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     if "NULL" not in reduce:
         run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s.%s.spades.assembly.fasta" % (name,keep))
     else:
+        #run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
         run_bwa(forward_path,reverse_path,processors,name,"%s.%s.spades.assembly.fasta" % (name,keep))
-    make_bam("%s.sam" % name, name)
+    #make_bam("%s.sam" % name, name)
     #This is for the per contig coverage routine. This can likely be replaced
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep), name)
     subprocess.check_call("tr ' ' '\t' < %s.tmp.txt > %s.genome_size.txt" % (name, name), shell=True)
