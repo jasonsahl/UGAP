@@ -466,14 +466,12 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     else:
         run_trimmomatic(TRIM_PATH, processors, "%s.F.tmp.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name, name, UGAP_PATH, length)
         if phiX_filter == "T":
-            #try:
-            #    print "Removing phiX from reads with USEARCH"
             try:
                 subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
             except:
                 pass
             cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-reverse","%s.R.paired.fastq" % name,"-output","%s.F.tmp.fastq" % name,
-                  "-output2","%s.R.tmp.fastq" % name]
+                  "-output2","%s.R.tmp.fastq" % name,">","/dev/null 2>&1"]
             try:
                 subprocess.call(cmd)
                 os.system("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name))
@@ -517,7 +515,6 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         os.system("samtools index %s_renamed.bam" % name)
     print "running Pilon"
     try:
-        print "java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name)
         os.system("java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
     except:
         print "problem running Pilon. Exiting...."
