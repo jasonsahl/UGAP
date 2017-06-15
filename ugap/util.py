@@ -438,11 +438,11 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         rv = subprocess.call(['which', 'bam2fastq'])
         if rv == 0:
             #I can make this function more efficient
-            run_bwa("%s" % forward_path, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
+            os.system("bwa index %s > /dev/null 2>&1" % reduce)
+            run_bwa("%s" % forward_path, "%s" % reverse_path, processors, name, reduce)
             os.system("samtools index %s_renamed.bam" % name)
-            #run_bwa(forward_path, reverse_path, processors, name, reduce)
-            os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
-            os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > %s.reduce_results.txt" % (name,name,name))
+            #os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
+            os.system("bam2fastq -o %s#.fastq --no-aligned %s_renamed.bam > %s.reduce_results.txt" % (name,name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
             subsample_reads("%s_1.fastq.gz" % name, "%s.F.tmp.fastq.gz" % name)
             subsample_reads("%s_2.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name)
