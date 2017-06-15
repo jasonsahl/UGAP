@@ -438,8 +438,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         rv = subprocess.call(['which', 'bam2fastq'])
         if rv == 0:
             #I can make this function more efficient
-            os.system("bwa index %s > /dev/null 2>&1" % reduce)
-            run_bwa("%s" % forward_path, "%s" % reverse_path, processors, name, reduce)
+            os.system("cp %s ./to_reduce.fasta" % reduce)
+            os.system("bwa index to_reduce.fasta > /dev/null 2>&1")
+            run_bwa("%s" % forward_path, "%s" % reverse_path, processors, name, "to_reduce.fasta")
             os.system("samtools index %s_renamed.bam" % name)
             #os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
             os.system("bam2fastq -o %s#.fastq --no-aligned %s_renamed.bam > %s.reduce_results.txt" % (name,name,name))
