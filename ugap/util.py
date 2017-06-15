@@ -21,7 +21,8 @@ def subsample_reads(input_fastq,output_fastq):
     import gzip
     import random
     """I changed this on 8/15/2016: Testing to see if this is enough or whether we should still increase"""
-    number_to_sample = 20000000
+    #What is the right number to subsample? 4 million should be more than enough for bacteria
+    number_to_sample = 4000000
     with GzipFile(input_fastq) as input:
         num_lines = sum([1 for line in input])
         total_records = int(num_lines / 4)
@@ -437,7 +438,9 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         rv = subprocess.call(['which', 'bam2fastq'])
         if rv == 0:
             #I can make this function more efficient
-            run_bwa(forward_path, reverse_path, processors, name, reduce)
+            run_bwa("%s" % forward_path, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
+            os.system("samtools index %s_renamed.bam" % name)
+            #run_bwa(forward_path, reverse_path, processors, name, reduce)
             os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
             os.system("bam2fastq -o %s#.fastq --no-aligned %s.bam > %s.reduce_results.txt" % (name,name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
@@ -569,6 +572,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     sum_coverage("%s.coverage.out" % name, 3, name)
     merge_files_by_column(0,"%s.genome_size.txt" % name, "%s.amount_covered.txt" % name, "%s.results.txt" % name)
     report_stats("%s.results.txt" % name, "%s_renamed_header.bam" % name, name)
+    """The 3 suffix here is totally arbitrary and should be changed"""
     doc("%s.coverage.out" % name, "%s.genome_size.txt" % name, name, 3)
     os.system("cp %s_3_depth.txt %s/UGAP_assembly_results" % (name,start_path))
     sum_totals("%s_3_depth.txt" % name, name, "%s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
