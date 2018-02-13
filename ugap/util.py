@@ -48,19 +48,23 @@ def subsample_reads(input_fastq,output_fastq):
         outfile.close()
 
 def report_stats(results, bam, name):
-    infile = open(results, "rU")
+    #infile = open(results, "rU")
     outfile = open("%s_breadth.txt" % name, "w")
-    print >> outfile, name,"\n",
-    for line in infile:
-        fields = line.split()
-        chromosome = fields[0]
-        try:
-            amount = (int(fields[2])/int(fields[1]))*100
-            print >> outfile,chromosome,"\t",amount,"\n",
-        except:
-            print >> outfile, chromosome,"\t","0","\n",
-            sys.exc_clear()
-    infile.close()
+    outfile.write(name)
+    outfile.write("\n")
+    #print >> outfile, name,"\n",
+    with open(results) as infile:
+        for line in infile:
+            fields = line.split()
+            chromosome = fields[0]
+            try:
+                amount = (int(fields[2])/int(fields[1]))*100
+                #print >> outfile,chromosome,"\t",amount,"\n",
+            except:
+                #print >> outfile, chromosome,"\t","0","\n",
+                outfile.write(str(chromosome)+"\t"+"0"+"\n")
+                sys.exc_clear()
+    #infile.close()
     outfile.close()
 
 def merge_files_by_column(column, file_1, file_2, out_file):
@@ -85,42 +89,48 @@ def merge_files_by_column(column, file_1, file_2, out_file):
     fout.close()
 
 def doc(coverage, genome_size, name, suffix):
-    incov = open(coverage, "U")
-    ingenom = open(genome_size, "U")
+    #incov = open(coverage)
+    #ingenom = open(genome_size)
     outfile = open("%s_%s_depth.txt" % (name, suffix), "w")
-    all = [ ]
+    all = []
     my_dict = {}
-    for line in incov:
-        fields=line.split()
-        fields = map(lambda s: s.strip(), fields)
-        all.append(fields)
-    for x, y in all:
+    with open(coverage) as incov:
+        for line in incov:
+            fields=line.split()
+            fields = map(lambda s: s.strip(), fields)
+            all.append(fields)
+    for x,y in all:
         if int(y)>int(1):
            try:
-                my_dict[x].append(y)
+               my_dict[x].append(y)
            except KeyError:
-                my_dict[x] = [y]
-        else:
-           continue
+               my_dict[x] = [y]
     new_dict={}
-    for k,v in my_dict.iteritems():
+    for k,v in my_dict.items():
         ints = map(int, v)
         new_dict.update({k:sum(ints)})
     genome_size_dict = {}
-    for line in ingenom:
-        fields = line.split()
-        genome_size_dict.update({fields[0]:fields[1]})
-    print >> outfile, name,"\n",
-    for k,v in new_dict.iteritems():
-        print >> outfile, k,"\t",round(int(v)/int(genome_size_dict.get(k)),0)
-    for y,z in genome_size_dict.iteritems():
+    with open(genome_size) as ingenom:
+        for line in ingenom:
+            fields = line.split()
+            genome_size_dict.update({fields[0]:fields[1]})
+    #print >> outfile, name,"\n",
+    outfile.write(str(name)+"\n")
+    print(genome_size_dict)
+    for k,v in new_dict.items():
+        #print(k,v,genome_size_dict.get(k))
+        outfile.write(str(k)+"\t"+str(round(int(v)/int(genome_size_dict.get(k))))+"0"+"\n")
+        #print >> outfile, k,"\t",round(int(v)/int(genome_size_dict.get(k)),0)
+    for y,z in genome_size_dict.items():
         if y not in new_dict:
-                print >> outfile, y,"\t","0"
+            outfile.write(str(y)+"\t"+"0"+"\n")
+            #print >> outfile, y,"\t","0"
+    outfile.close()
 
 def sum_coverage(coverage,cov,name):
-    infile = open(coverage, "rU")
+    infile = open(coverage)
     outfile = open("%s.amount_covered.txt" % name, "w")
-    all = [ ]
+    all = []
     dict = {}
     for line in infile:
         fields=line.split()
@@ -134,8 +144,9 @@ def sum_coverage(coverage,cov,name):
                dict[x] = [y]
         else:
                pass
-    for k,v in dict.iteritems():
-        print >> outfile, k+"\t"+str(len(v))
+    for k,v in dict.items():
+        outfile.write(str(k)+"\t"+str(len(v)))
+        #print >> outfile, k+"\t"+str(len(v))
     infile.close()
     outfile.close()
 
@@ -156,7 +167,9 @@ def remove_column(temp_file, name):
         del fields[1]
         my_fields.append(fields)
     for x in my_fields:
-        print >> outfile, "\t".join(x)
+        outfile.write("\t".join(x))
+        outfile.write("\n")
+        #print >> outfile, "\t".join(x)
     infile.close()
     outfile.close()
 
@@ -166,7 +179,8 @@ def get_seq_length(ref, name):
     infile = open(ref, "rU")
     outfile = open("%s.tmp.txt" % name, "w")
     for record in SeqIO.parse(infile, "fasta"):
-        print >> outfile,record.id,len(record.seq)
+        outfile.write(str(record.id)+"\t"+str(len(record.seq))+"\n")
+        #print >> outfile,record.id,len(record.seq)
     infile.close()
     outfile.close()
 
@@ -185,22 +199,26 @@ def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_
 
 def slice_assembly(infile, keep_length, outfile):
     """Keep length will be 200"""
-    input=open(infile, "rU")
+    input=open(infile)
     output = open(outfile, "w")
     start=0
     #end=keep_length
     for record in SeqIO.parse(input,"fasta"):
         seqlength = len(record.seq)
-        print >> output,">"+record.id+"\n",
+        output.write(">"+str(record.id)+"\n")
+        #print >> output,">"+record.id+"\n",
         if seqlength<250:
-            print >> output, record.seq[start:keep_length]
+            output.write(str(record.seq[start:keep_length])+"\n")
+            #rint >> output, record.seq[start:keep_length]
         elif seqlength<350:
-            print >> output, record.seq[100:300]
+            output.write(str(record.seq[100:300])+"\n")
+            #print >> output, record.seq[100:300]
         elif seqlength<450:
-            print >> output, record.seq[200:400]
+            output.write(str(record.seq[200:400])+"\n")
+            #print >> output, record.seq[200:400]
         else:
-            print >> output, record.seq[200:400]
-
+            output.write(str(record.seq[200:400])+"\n")
+            #print >> output, record.seq[200:400]
     input.close()
     output.close()
 
@@ -213,19 +231,21 @@ def find_missing_coverages(depth, merged, lengths, name):
             pass
         else:
             all_ids.update({fields[0]:fields[1]})
-    for k,v in all_ids.iteritems():
+    for k,v in all_ids.items():
         hits = []
         nohits = []
         for line in open(merged, "U"):
             fields = line.split()
             if k == fields[0]:
-                print >> outfile, line,
+                outfile.write(line)
+                #print >> outfile, line,
                 hits.append("1")
             else:
                 nohits.append("1")
         allhits = hits + nohits
         if len(nohits)==len(allhits):
-            print >> outfile, str(k)+"\t"+"N/A"+"\t"+"no_blast_hit"+"\t"+str(lengths.get(k))+"\t"+str(v)
+            outfile.write(str(k)+"\t"+"N/A"+"\t"+"no_blast_hit"+"\t"+str(lengths.get(k))+"\t"+str(v)+"\n")
+            #print >> outfile, str(k)+"\t"+"N/A"+"\t"+"no_blast_hit"+"\t"+str(lengths.get(k))+"\t"+str(v)
     outfile.close()
 
 def merge_blast_with_coverages(blast_report, coverages, lengths, name):
@@ -240,7 +260,7 @@ def merge_blast_with_coverages(blast_report, coverages, lengths, name):
             pass
         else:
             coverage_dict.update({fields[0]:fields[1]})
-    for line in open(blast_report, "U"):
+    for line in open(blast_report):
         file_list = []
         newline = line.strip()
         #out_list = []
@@ -255,9 +275,11 @@ def merge_blast_with_coverages(blast_report, coverages, lengths, name):
             single_list.append(str(lengths.get(fields[0])))
             single_list.append(str(coverage_dict.get(fields[0])))
             out_list.append(single_list)
-
     for alist in out_list:
-        print >> outfile, "\t".join(alist)
+        outfile.write("\t".join(alist))
+        outfile.write("\n")
+    outfile.close()
+    #print >> outfile, "\t".join(alist)
 
 def get_contig_lengths(in_fasta):
     length_dict = {}
@@ -296,7 +318,7 @@ def read_file_sets(dir_path):
                     (baseName,read) = m.groups()[0], m.groups()[1]
                     reverse_reads[baseName] = infile
                 else:
-                    print "#Could not determine forward/reverse read status for input file"
+                    print("#Could not determine forward/reverse read status for input file")
         else:
             baseName, read  = m.groups()[0], m.groups()[3]
             if read == "_R1":
@@ -304,7 +326,7 @@ def read_file_sets(dir_path):
             elif read == "_R2":
                 reverse_reads[baseName] = infile
             else:
-                print "#Could not determine forward/reverse read status for input file "
+                print("#Could not determine forward/reverse read status for input file ")
                 fileSets[file_name_before_ext] = infile
                 num_single_readsets += 1
     for sample in forward_reads:
@@ -320,12 +342,10 @@ def read_file_sets(dir_path):
             fileSets[sample] = reverse_reads[sample] # no forward found
             num_single_readsets += 1
             logging.info('#Warning, could not find pair for read:' + reverse_reads[sample])
-
     if num_paired_readsets > 0:
         logging.info('Total paired readsets found:' + str(num_paired_readsets))
     if num_single_readsets > 0:
         logging.info('Total single reads found:' + str(num_single_readsets))
-
     return fileSets
 
 def get_seq_name(in_fasta):
@@ -341,7 +361,7 @@ def get_sequence_length_dev(fastq_in):
 
 def clean_fasta(fasta_in, fasta_out):
     seqrecords=[]
-    for record in SeqIO.parse(open(fasta_in, "U"), "fasta"):
+    for record in SeqIO.parse(open(fasta_in), "fasta"):
         seqrecords.append(record)
     output_handle=open(fasta_out, "w")
     SeqIO.write(seqrecords, output_handle, "fasta")
@@ -349,7 +369,7 @@ def clean_fasta(fasta_in, fasta_out):
 
 def filter_seqs(fasta_in, keep, name):
     kept_sequences=[]
-    for record in SeqIO.parse(open(fasta_in, "U"), "fasta"):
+    for record in SeqIO.parse(open(fasta_in), "fasta"):
         if len(record.seq) >= int(keep):
             kept_sequences.append(record)
     output_handle = open("%s.%s.spades.assembly.fasta" % (name,keep), "w")
@@ -371,14 +391,14 @@ def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts,name):
        try:
            log_fh = open(log_file, 'w')
        except:
-           print log_file, 'could not open'
+           print(log_file,'could not open')
     else:
         log_fh = PIPE
 
     try:
         sam_fh = open(sam_file, 'w')
     except:
-        print sam_file, 'could not open'
+        print(sam_file, 'could not open')
 
     #print mem_arguments
     arg_string = " ".join(mem_arguments)
@@ -397,8 +417,10 @@ def rename_multifasta(fasta_in, prefix, fasta_out):
     rec=1
     handle = open(fasta_out, "w")
     for record in SeqIO.parse(open(fasta_in), "fasta"):
-        print >> handle, ">"+prefix+"_"+str(autoIncrement())
-        print >> handle, record.seq
+        handle.write(">"+str(prefix)+"_"+str(autoIncrement())+"\n")
+        #print >> handle, ">"+prefix+"_"+str(autoIncrement())
+        handle.write(str(record.seq)+"\n")
+        #print >> handle, record.seq
     handle.close()
 
 def rename_for_prokka(name_list):
@@ -416,7 +438,8 @@ def sum_totals(input, name, output):
             pass
         else:
             coverages.append(float(fields[1]))
-    print >> outfile, name, sum(coverages)/len(coverages)
+    outfile.write(str(name)+"\t"+str(sum(coverages)/len(coverages))+"\n")
+    #print >> outfile, name, sum(coverages)/len(coverages)
     outfile.close()
 
 rec=1
@@ -431,7 +454,7 @@ def autoIncrement():
         rec += pInterval
         return rec
 
-def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,phiX_filter):
+def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,phiX_filter):
     """This should, in theory, get rid of phiX if it is present, assuming it's not in the reference"""
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
@@ -448,7 +471,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             subsample_reads("%s_1.fastq.gz" % name, "%s.F.tmp.fastq.gz" % name)
             subsample_reads("%s_2.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name)
         else:
-            print "to deplete reads, you need to have bam2fastq installed. Reads will not be depleted"
+            print("to deplete reads, you need to have bam2fastq installed. Reads will not be depleted")
     """The Ks parameter is obsolete in Spade 3.7+, this will likely be removed in the future"""
     if int(get_sequence_length_dev(forward_path))<=200 and int(get_sequence_length_dev(forward_path))>=100:
         #Uses default K values, based on SPADes recs
@@ -488,7 +511,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
                 os.system("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name))
                 os.system("pigz *.paired.fastq")
             except:
-                print "usearch9 required for phiX filtering...exiting"
+                print("usearch9 required for phiX filtering...exiting")
                 sys.exit()
     #This next section runs spades according to the input parameters
     #Checkpoint 3: Spades assembly
@@ -496,19 +519,29 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         pass
     else:
         if error_corrector=="hammer":
-            if careful == "T":
-                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-            else:
-                subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            if assembler=="spades":
+                if careful == "T":
+                    subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                else:
+                    subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            elif assembler=="skesa":
+                subprocess.check_call("spades.py -o %s.spades -t %s --1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+                """Skesa call on corrected reads"""
+                subprocess.check_call("skesa --gz --fastq %s.spades/corrected/%s*R1*cor.fastq.gz %s.spades/corrected/%s*R2*cor.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,name,name,processors,name), shell=True)
         else:
-            if careful == "T":
-                subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-            else:
+            if assembler=="spades":
                 subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+            else:
+                subprocess.check_call("skesa --gz --fastq %s.F.paired.fastq.gz %s.R.paired.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,processors,name), shell=True)
+    """need to rename stuff here, copying over the Skesa files if they exist"""
+    if assembler=="spades":
         os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
-    filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
-    #This uses biopython to pretty up the sequences, but not sure it would affect downstream usability
-    clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
+        filter_seqs("%s.spades.assembly.fasta" % name, keep, name)
+        #This uses biopython to pretty up the sequences, but not sure it would affect downstream usability
+        clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
+    else:
+        filter_seqs("%s.skesa.fasta" % name, keep, name)
+        clean_fasta("%s.%s.skesa.fasta" % (name,keep),"%s_cleaned.fasta" % name)
     #Cleans up the names for downstream apps
     rename_multifasta("%s_cleaned.fasta" % name, name, "%s_renamed.fasta" % name)
     #Here I align reads to this new assembly: 1st instance of read alignment
@@ -523,11 +556,11 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         #align depleted reads if the reduced option is selected. This section is currently being tested
         run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
         os.system("samtools index %s_renamed.bam" % name)
-    print "running Pilon"
+    print("running Pilon")
     try:
         os.system("java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
     except:
-        print "problem running Pilon. Exiting...."
+        print("problem running Pilon. Exiting....")
         #instead of exiting here, I could just change the name and keep going
         sys.exit()
     rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
@@ -536,7 +569,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
     try:
         subprocess.check_call("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep), shell=True, stderr=open(os.devnull, "w"))
     except:
-        print "problem fixing missing spaces"
+        print("problem fixing missing spaces")
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s/UGAP_assembly_results/%s_final_assembly.fasta" % (start_path,name))
     try:
         #Runs Prokka, if it's installed
@@ -553,7 +586,7 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
             os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.prokka.fasta > /dev/null 2>&1" % (small_name,small_name,small_name,keep,small_name,small_name))
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
-        print "Prokka was not run, so no annotation files will be included"
+        print("Prokka was not run, so no annotation files will be included")
     #Copies these files to your output directory, whether or not the previous commands were successful
     os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
     #I need to check the number of contigs, then decide whether or not to run bwa again
@@ -590,4 +623,4 @@ def run_single_loop(forward_path,reverse_path,name,error_corrector,processors,ke
         find_missing_coverages("%s_3_depth.txt" % name, "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths, name)
         os.system("sort -u -k 1,1 %s.new.txt | sort -gr -k 5,5 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name, start_path, name))
     else:
-        print "BLAST not run"
+        print("BLAST not run")

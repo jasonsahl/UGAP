@@ -11,7 +11,7 @@ try:
     from ugap.util import *
     from igs.utils import logging as log_isg
 except:
-    print "Environment not set correctly, correct ugap_single.py environment"
+    print("Environment not set correctly, correct ugap_single.py environment")
     sys.exit()
 import errno
 from subprocess import Popen
@@ -20,25 +20,23 @@ def test_dir(option, opt_str, value, parser):
     if os.path.exists(value):
         setattr(parser.values, option.dest, value)
     else:
-        print "directory of fastas cannot be found"
+        print("directory of fastas cannot be found")
         sys.exit()
 
 def test_file(option, opt_str, value, parser):
     try:
         with open(value): setattr(parser.values, option.dest, value)
     except IOError:
-        print '%s file cannot be opened' % option
+        print('%s file cannot be opened' % option)
         sys.exit()
 
 def test_options(option, opt_str, value, parser):
     if "hammer" in value:
         setattr(parser.values, option.dest, value)
-    elif "musket" in value:
-        setattr(parser.values, option.dest, value)
     elif "none" in value:
         setattr(parser.values, option.dest, value)
     else:
-        print "select from hammer, musket, or none"
+        print("select from hammer or none")
         sys.exit()
 
 def test_truths(option, opt_str, value, parser):
@@ -47,7 +45,7 @@ def test_truths(option, opt_str, value, parser):
     elif "F" in value:
         setattr(parser.values, option.dest, value)
     else:
-        print "must select from T or F"
+        print("must select from T or F")
         sys.exit()
 
 rec=1
@@ -62,7 +60,8 @@ def autoIncrement():
         rec += pInterval
         return rec
 
-def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,processors,careful,ugap_path,blast_nt,cov_cutoff,filter_phiX):
+def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,processors,
+    careful,ugap_path,blast_nt,cov_cutoff,filter_phiX,assembler):
     UGAP_PATH=ugap_path
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic-0.30.jar"
@@ -71,7 +70,7 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
     if os.path.exists(UGAP_PATH):
         sys.path.append("%s" % UGAP_PATH)
     else:
-        print "your UGAP path is not correct.  Edit the path in ugap_pbs_prep.py and try again"
+        print("your UGAP path is not correct.  Edit the path in ugap_pbs_prep.py and try again")
         sys.exit()
     start_dir = os.getcwd()
     start_path = os.path.abspath("%s" % start_dir)
@@ -89,41 +88,35 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
     if "NULL" != reduce:
         reduce_path=os.path.abspath("%s" % reduce)
     """test for dependencies"""
-    if error_corrector=="musket":
-        ab = subprocess.call(['which', 'musket'])
-        if ab == 0:
-            pass
-        else:
-            print "musket isn't in your path, but needs to be!"
-            sys.exit()
+    if "spades" in assembler:
+        dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
     else:
-        pass
-    dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
+        dependencies = ['bwa','samtools','skesa','genomeCoverageBed']
     if "NULL" not in blast_nt:
         rx = subprocess.call(['which', 'blastn'])
         if rx == 0:
             pass
         else:
-            print "you asked to use a blastdb, but you don't have blastn in your PATH. Expect errors!"
+            print("you asked to use a blastdb, but you don't have blastn in your PATH. Expect errors!")
     for dependency in dependencies:
         ra = subprocess.call(['which', '%s' % dependency])
         if ra == 0:
             pass
         else:
-            print "%s is not in your path, but needs to be!" % dependency
+            print("%s is not in your path, but needs to be!" % dependency)
             sys.exit()
     """done checking for dependencies"""
     os.chdir("%s/%s.work_directory" % (start_path,name))
     if "NULL" not in reduce:
         if "NULL" not in blast_nt:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX)
         else:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX)
     else:
         if "NULL" not in blast_nt:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX)
         else:
-            run_single_loop(forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX)
     os.chdir("%s" % start_path)
     if temp_files == "F":
         os.system("rm -rf %s.work_directory" % name)
@@ -131,6 +124,9 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
 if __name__ == "__main__":
     usage="usage: %prog [options]"
     parser = OptionParser(usage=usage)
+    parser.add_option("-a", "--assembler", dest="assembler",
+                      help="Which assembler to use? Choose from spades [default] or skesa",
+                      action="store", type="string", default="spades")
     parser.add_option("-f", "--forward", dest="forward_read",
                       help="forward read, must be *.fastq.gz [REQUIRED]",
                       action="callback", callback=test_file, type="string")
@@ -174,9 +170,9 @@ if __name__ == "__main__":
     mandatories = ["forward_read","name","reverse_read","ugap_path"]
     for m in mandatories:
         if not options.__dict__[m]:
-            print "\nMust provide %s.\n" %m
+            print("\nMust provide %s.\n" %m)
             parser.print_help()
             exit(-1)
     main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,
          options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path,options.blast_nt,
-         options.cov_cutoff,options.filter_phiX)
+         options.cov_cutoff,options.filter_phiX,options.assembler)

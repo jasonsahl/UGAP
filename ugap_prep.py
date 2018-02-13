@@ -15,13 +15,13 @@ from ugap.util import get_readFile_components
 import sys
 import subprocess
 
-UGAP_PATH="/Users/jasonsahl/tools/UGAP"
+UGAP_PATH="/scratch/js2829/UGAP"
 
 def test_dir(option, opt_str, value, parser):
     if os.path.exists(value):
         setattr(parser.values, option.dest, value)
     else:
-        print "directory of fastqs cannot be found"
+        print("directory of fastqs cannot be found")
         sys.exit()
 
 def test_options(option, opt_str, value, parser):
@@ -32,7 +32,7 @@ def test_options(option, opt_str, value, parser):
     elif "none" in value:
         setattr(parser.values, option.dest, value)
     else:
-        print "select from hammer, musket, or none"
+        print("select from hammer, musket, or none")
         sys.exit()
 
 def test_truths(option, opt_str, value, parser):
@@ -41,10 +41,19 @@ def test_truths(option, opt_str, value, parser):
     elif "F" in value:
         setattr(parser.values, option.dest, value)
     else:
-        print "must select from T or F"
+        print("must select from T or F")
         sys.exit()
 
-def main(directory,error_corrector,keep,temp_files,reduce,processors,careful,blast_nt,cov_cutoff,phiX_filter):
+def test_assembler(option, opt_str, value, parser):
+    if "spades" in value:
+        setattr(parser.values, option.dest, value)
+    elif "skesa" in value:
+        setattr(parser.values, option.dest, value)
+    else:
+        print("must select from skesa or spades")
+        sys.exit()
+
+def main(assembler,directory,error_corrector,keep,temp_files,reduce,processors,careful,blast_nt,cov_cutoff,phiX_filter):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
     reduce_path = os.path.abspath("%s" % reduce)
@@ -57,19 +66,22 @@ def main(directory,error_corrector,keep,temp_files,reduce,processors,careful,bla
         if ra == 0:
             pass
         else:
-            print "%s is not in your path, but needs to be!" % dependency
+            print("%s is not in your path, but needs to be!" % dependency)
             sys.exit()
-    for k,v in fileSets.iteritems():
-        print k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)+"\t"+str(phiX_filter)
+    for k,v in fileSets.items():
+        print(k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)+"\t"+str(phiX_filter)+"\t"+str(assembler))
 
 if __name__ == "__main__":
     usage="usage: %prog [options]"
     parser = OptionParser(usage=usage)
+    parser.add_option("-a", "--assembler", dest="assembler",
+                      help="which assembler to use, choose from skesa or spades [default]",
+                      action="callback", callback=test_assembler, type="string", default="spades")
     parser.add_option("-d", "--directory", dest="directory",
                       help="directory to where .fastq.gz files are found [REQUIRED]",
                       action="callback", callback=test_dir, type="string")
     parser.add_option("-e", "--error", dest="error_corrector",
-                      help="error corrector, choose from musket,hammer, or none, defaults to hammer",
+                      help="error corrector, choose from hammer or none, defaults to hammer",
                       action="callback", callback=test_options, type="string", default="hammer")
     parser.add_option("-k", "--keep", dest="keep",
                       help="minimum length of contigs to keep, defaults to 200",
@@ -100,10 +112,10 @@ if __name__ == "__main__":
     mandatories = ["directory"]
     for m in mandatories:
         if not options.__dict__[m]:
-            print "\nMust provide %s.\n" %m
+            print("\nMust provide %s.\n" %m)
             parser.print_help()
             exit(-1)
 
-    main(options.directory,options.error_corrector,options.keep,options.temp_files,
+    main(options.assembler,options.directory,options.error_corrector,options.keep,options.temp_files,
          options.reduce,options.processors,options.careful,options.blast_nt,options.cov_cutoff,
          options.phiX_filter)
