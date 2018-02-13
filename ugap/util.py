@@ -517,6 +517,8 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     #Checkpoint 3: Spades assembly
     if os.path.isfile("%s.spades.assembly.fasta" % name):
         pass
+    elif os.path.isfile("%s.skesa.fasta" % name):
+        pass
     else:
         if error_corrector=="hammer":
             if assembler=="spades":
@@ -525,14 +527,14 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
                 else:
                     subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
             elif assembler=="skesa":
-                subprocess.check_call("spades.py -o %s.spades -t %s --1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+                subprocess.check_call("spades.py --only-error-correction -o %s.spades -t %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
                 """Skesa call on corrected reads"""
-                subprocess.check_call("skesa --gz --fastq %s.spades/corrected/%s*R1*cor.fastq.gz %s.spades/corrected/%s*R2*cor.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,name,name,processors,name), shell=True)
+                subprocess.check_call("skesa --gz --fastq %s.spades/corrected/%s*R1*cor.fastq.gz,%s.spades/corrected/%s*R2*cor.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,name,name,processors,name), shell=True)
         else:
             if assembler=="spades":
                 subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
             else:
-                subprocess.check_call("skesa --gz --fastq %s.F.paired.fastq.gz %s.R.paired.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,processors,name), shell=True)
+                subprocess.check_call("skesa --gz --fastq %s.F.paired.fastq.gz,%s.R.paired.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,processors,name), shell=True)
     """need to rename stuff here, copying over the Skesa files if they exist"""
     if assembler=="spades":
         os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
@@ -541,7 +543,7 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
     else:
         filter_seqs("%s.skesa.fasta" % name, keep, name)
-        clean_fasta("%s.%s.skesa.fasta" % (name,keep),"%s_cleaned.fasta" % name)
+        clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s_cleaned.fasta" % name)
     #Cleans up the names for downstream apps
     rename_multifasta("%s_cleaned.fasta" % name, name, "%s_renamed.fasta" % name)
     #Here I align reads to this new assembly: 1st instance of read alignment
