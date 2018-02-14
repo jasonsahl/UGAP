@@ -27,12 +27,10 @@ def test_dir(option, opt_str, value, parser):
 def test_options(option, opt_str, value, parser):
     if "hammer" in value:
         setattr(parser.values, option.dest, value)
-    elif "musket" in value:
-        setattr(parser.values, option.dest, value)
     elif "none" in value:
         setattr(parser.values, option.dest, value)
     else:
-        print("select from hammer, musket, or none")
+        print("select from hammer or none")
         sys.exit()
 
 def test_truths(option, opt_str, value, parser):
