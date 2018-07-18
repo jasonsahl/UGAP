@@ -61,7 +61,7 @@ def autoIncrement():
         return rec
 
 def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,processors,
-    careful,ugap_path,blast_nt,cov_cutoff,filter_phiX,assembler):
+    careful,ugap_path,blast_nt,cov_cutoff,filter_phiX,assembler,adapter_trimmer):
     UGAP_PATH=ugap_path
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic.jar"
@@ -166,6 +166,9 @@ if __name__ == "__main__":
     parser.add_option("-j", "--filter_phiX", dest="filter_phiX",
                       help="use USEARCH to filter phiX from reads? defaults to T",
                       action="store", type="string", default="T")
+    parser.add_option("-c", "--adapter_trimmer", dest="adapter_trimmer",
+                      help="adapter trimmer, choose from trimmomatic or bbduk[default]",
+                      action="store", type="string", default="T")
     options, args = parser.parse_args()
     mandatories = ["forward_read","name","reverse_read","ugap_path"]
     for m in mandatories:
@@ -175,4 +178,4 @@ if __name__ == "__main__":
             exit(-1)
     main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,
          options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path,options.blast_nt,
-         options.cov_cutoff,options.filter_phiX,options.assembler)
+         options.cov_cutoff,options.filter_phiX,options.assembler,options.adapter_trimmer)

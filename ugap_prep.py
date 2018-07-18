@@ -51,14 +51,21 @@ def test_assembler(option, opt_str, value, parser):
         print("must select from skesa or spades")
         sys.exit()
 
-def main(assembler,directory,error_corrector,keep,temp_files,reduce,processors,careful,blast_nt,cov_cutoff,phiX_filter):
+def main(assembler,directory,error_corrector,keep,temp_files,reduce,processors,careful,blast_nt,cov_cutoff,phiX_filter,adapter_trimmer):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
     reduce_path = os.path.abspath("%s" % reduce)
+    dependencies = ['bwa','samtools']
     if phiX_filter == "T":
-        dependencies = ['bwa','samtools','spades.py','usearch']
-    else:
-        dependencies = ['bwa','samtools','spades.py']
+        dependencies.append("usearch")
+    if assembler == "spades":
+        dependencies.append("spades.py")
+    elif assembler == "skesa":
+        dependencies.append("skesa")
+    if adapter_trimmer == "trimmomatic":
+        dependencies.append("trimmomatic")
+    elif adapter_trimmer == "bbduk":
+        dependencies.append("bbduk.sh")
     for dependency in dependencies:
         ra = subprocess.check_call('which %s > /dev/null 2>&1' % dependency, shell=True)
         if ra == 0:
@@ -67,7 +74,7 @@ def main(assembler,directory,error_corrector,keep,temp_files,reduce,processors,c
             print("%s is not in your path, but needs to be!" % dependency)
             sys.exit()
     for k,v in fileSets.items():
-        print(k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)+"\t"+str(phiX_filter)+"\t"+str(assembler))
+        print(k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)+"\t"+str(phiX_filter)+"\t"+str(assembler)+"\t"+str(adapter_trimmer))
 
 if __name__ == "__main__":
     usage="usage: %prog [options]"
@@ -105,6 +112,9 @@ if __name__ == "__main__":
     parser.add_option("-z", "--phiX", dest="phiX_filter",
                       help="filter for PhiX? Defaults to T, choose from T or F",
                       action="callback", callback=test_truths, type="string", default="T")
+    parser.add_option("-c", "--adapter_trimmer", dest="adapter_trimmer",
+                      help="which trimmer to use, trimmomatic or bbduk [default]",
+                      action="store", type="string", default="bbduk")
     options, args = parser.parse_args()
 
     mandatories = ["directory"]
@@ -116,4 +126,4 @@ if __name__ == "__main__":
 
     main(options.assembler,options.directory,options.error_corrector,options.keep,options.temp_files,
          options.reduce,options.processors,options.careful,options.blast_nt,options.cov_cutoff,
-         options.phiX_filter)
+         options.phiX_filter,options.adapter_trimmer)

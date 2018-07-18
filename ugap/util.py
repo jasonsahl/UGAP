@@ -26,10 +26,10 @@ def subsample_reads(input_fastq,output_fastq):
     with GzipFile(input_fastq) as input:
         num_lines = sum([1 for line in input])
         total_records = int(num_lines / 4)
-    if int(total_records)<int(number_to_sample):
+    if (int(total_records)-5000)<int(number_to_sample):
         os.system("cp %s %s" % (input_fastq,output_fastq))
     else:
-        outfile = gzip.open(output_fastq, "wb")
+        outfile = gzip.open(output_fastq, "w")
         output_sequence_sets = (set(random.sample(xrange(total_records + 1), number_to_sample)))
         record_number = 0
         with GzipFile(input_fastq) as input:
@@ -48,23 +48,18 @@ def subsample_reads(input_fastq,output_fastq):
         outfile.close()
 
 def report_stats(results, bam, name):
-    #infile = open(results, "rU")
     outfile = open("%s_breadth.txt" % name, "w")
     outfile.write(name)
     outfile.write("\n")
-    #print >> outfile, name,"\n",
     with open(results) as infile:
         for line in infile:
             fields = line.split()
             chromosome = fields[0]
             try:
                 amount = (int(fields[2])/int(fields[1]))*100
-                #print >> outfile,chromosome,"\t",amount,"\n",
             except:
-                #print >> outfile, chromosome,"\t","0","\n",
                 outfile.write(str(chromosome)+"\t"+"0"+"\n")
                 sys.exc_clear()
-    #infile.close()
     outfile.close()
 
 def merge_files_by_column(column, file_1, file_2, out_file):
@@ -89,8 +84,6 @@ def merge_files_by_column(column, file_1, file_2, out_file):
     fout.close()
 
 def doc(coverage, genome_size, name, suffix):
-    #incov = open(coverage)
-    #ingenom = open(genome_size)
     outfile = open("%s_%s_depth.txt" % (name, suffix), "w")
     all = []
     my_dict = {}
@@ -114,17 +107,12 @@ def doc(coverage, genome_size, name, suffix):
         for line in ingenom:
             fields = line.split()
             genome_size_dict.update({fields[0]:fields[1]})
-    #print >> outfile, name,"\n",
     outfile.write(str(name)+"\n")
-    print(genome_size_dict)
     for k,v in new_dict.items():
-        #print(k,v,genome_size_dict.get(k))
         outfile.write(str(k)+"\t"+str(round(int(v)/int(genome_size_dict.get(k))))+"0"+"\n")
-        #print >> outfile, k,"\t",round(int(v)/int(genome_size_dict.get(k)),0)
     for y,z in genome_size_dict.items():
         if y not in new_dict:
             outfile.write(str(y)+"\t"+"0"+"\n")
-            #print >> outfile, y,"\t","0"
     outfile.close()
 
 def sum_coverage(coverage,cov,name):
@@ -146,7 +134,6 @@ def sum_coverage(coverage,cov,name):
                pass
     for k,v in dict.items():
         outfile.write(str(k)+"\t"+str(len(v)))
-        #print >> outfile, k+"\t"+str(len(v))
     infile.close()
     outfile.close()
 
@@ -169,7 +156,6 @@ def remove_column(temp_file, name):
     for x in my_fields:
         outfile.write("\t".join(x))
         outfile.write("\n")
-        #print >> outfile, "\t".join(x)
     infile.close()
     outfile.close()
 
@@ -180,7 +166,6 @@ def get_seq_length(ref, name):
     outfile = open("%s.tmp.txt" % name, "w")
     for record in SeqIO.parse(infile, "fasta"):
         outfile.write(str(record.id)+"\t"+str(len(record.seq))+"\n")
-        #print >> outfile,record.id,len(record.seq)
     infile.close()
     outfile.close()
 
@@ -202,23 +187,17 @@ def slice_assembly(infile, keep_length, outfile):
     input=open(infile)
     output = open(outfile, "w")
     start=0
-    #end=keep_length
     for record in SeqIO.parse(input,"fasta"):
         seqlength = len(record.seq)
         output.write(">"+str(record.id)+"\n")
-        #print >> output,">"+record.id+"\n",
         if seqlength<250:
             output.write(str(record.seq[start:keep_length])+"\n")
-            #rint >> output, record.seq[start:keep_length]
         elif seqlength<350:
             output.write(str(record.seq[100:300])+"\n")
-            #print >> output, record.seq[100:300]
         elif seqlength<450:
             output.write(str(record.seq[200:400])+"\n")
-            #print >> output, record.seq[200:400]
         else:
             output.write(str(record.seq[200:400])+"\n")
-            #print >> output, record.seq[200:400]
     input.close()
     output.close()
 
@@ -238,14 +217,12 @@ def find_missing_coverages(depth, merged, lengths, name):
             fields = line.split()
             if k == fields[0]:
                 outfile.write(line)
-                #print >> outfile, line,
                 hits.append("1")
             else:
                 nohits.append("1")
         allhits = hits + nohits
         if len(nohits)==len(allhits):
             outfile.write(str(k)+"\t"+"N/A"+"\t"+"no_blast_hit"+"\t"+str(lengths.get(k))+"\t"+str(v)+"\n")
-            #print >> outfile, str(k)+"\t"+"N/A"+"\t"+"no_blast_hit"+"\t"+str(lengths.get(k))+"\t"+str(v)
     outfile.close()
 
 def merge_blast_with_coverages(blast_report, coverages, lengths, name):
@@ -263,7 +240,6 @@ def merge_blast_with_coverages(blast_report, coverages, lengths, name):
     for line in open(blast_report):
         file_list = []
         newline = line.strip()
-        #out_list = []
         if line.startswith("#"):
             pass
         else:
@@ -279,7 +255,6 @@ def merge_blast_with_coverages(blast_report, coverages, lengths, name):
         outfile.write("\t".join(alist))
         outfile.write("\n")
     outfile.close()
-    #print >> outfile, "\t".join(alist)
 
 def get_contig_lengths(in_fasta):
     length_dict = {}
@@ -382,11 +357,7 @@ def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts,name):
         mem_arguments.extend([reference,read_1])
     else:
         mem_arguments.extend([reference,read_1,read_2])
-    #mem_arguments.extend([">","/dev/null","2>&1"])
     mem_arguments.extend(my_opts)
-    #for opt in my_opts.items():
-    #    mem_arguments.extend(opt)
-
     if log_file:
        try:
            log_fh = open(log_file, 'w')
@@ -400,12 +371,8 @@ def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts,name):
     except:
         print(sam_file, 'could not open')
 
-    #print mem_arguments
     arg_string = " ".join(mem_arguments)
-    #os.system("%s > /dev/null 2>&1" % arg_string)
     subprocess.call("%s" % arg_string, shell=True, stdout = log_fh, stderr = log_fh)
-    #bwa = Popen(mem_arguments, stderr=log_fh, stdout=sam_fh)
-    #bwa.wait()
 
 def run_bwa(read_1, read_2, processors, name, reference):
     #read_group = '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' % name
@@ -418,9 +385,7 @@ def rename_multifasta(fasta_in, prefix, fasta_out):
     handle = open(fasta_out, "w")
     for record in SeqIO.parse(open(fasta_in), "fasta"):
         handle.write(">"+str(prefix)+"_"+str(autoIncrement())+"\n")
-        #print >> handle, ">"+prefix+"_"+str(autoIncrement())
         handle.write(str(record.seq)+"\n")
-        #print >> handle, record.seq
     handle.close()
 
 def rename_for_prokka(name_list):
@@ -439,7 +404,6 @@ def sum_totals(input, name, output):
         else:
             coverages.append(float(fields[1]))
     outfile.write(str(name)+"\t"+str(sum(coverages)/len(coverages))+"\n")
-    #print >> outfile, name, sum(coverages)/len(coverages)
     outfile.close()
 
 rec=1
@@ -465,7 +429,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             os.system("bwa index to_reduce.fasta > /dev/null 2>&1")
             run_bwa("%s" % forward_path, "%s" % reverse_path, processors, name, "to_reduce.fasta")
             os.system("samtools index %s_renamed.bam" % name)
-            #os.system("samtools view -bS %s.sam > %s.bam 2> /dev/null" % (name,name))
             os.system("bam2fastq -o %s#.fastq --no-aligned %s_renamed.bam > %s.reduce_results.txt" % (name,name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
             subsample_reads("%s_1.fastq.gz" % name, "%s.F.tmp.fastq.gz" % name)
@@ -496,7 +459,8 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
     else:
-        run_trimmomatic(TRIM_PATH, processors, "%s.F.tmp.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name, name, UGAP_PATH, length)
+        #run_trimmomatic(TRIM_PATH, processors, "%s.F.tmp.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name, name, UGAP_PATH, length)
+        subprocess.check_call("bbduk.sh in=%s.F.tmp.fastq.gz in2=%s.R.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz out2=%s.R.paired.fastq.gz minlen=%s overwrite=true" % (name,name,UGAP_PATH,name,name,length), shell=True)
         if phiX_filter == "T":
             try:
                 subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
@@ -528,8 +492,8 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
                     subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
             elif assembler=="skesa":
                 subprocess.check_call("spades.py --only-error-correction -o %s.spades -t %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
-                """Skesa call on corrected reads"""
-                subprocess.check_call("skesa --gz --fastq %s.spades/corrected/%s*R1*cor.fastq.gz,%s.spades/corrected/%s*R2*cor.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,name,name,processors,name), shell=True)
+                """This workflow needs to be tested"""
+                subprocess.check_call("skesa --gz --fastq %s.spades/corrected/%s.F.paired.fastq.00.0_0.cor.fastq.gz,%s.spades/corrected/%s.R.paired.fastq.00.0_0.cor.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,name,name,processors,name), shell=True)
         else:
             if assembler=="spades":
                 subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
@@ -550,7 +514,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
     #Index renamed.fasta for calling variants
     os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
-    #run_bwa("%s.F.paired.fastq.gz" % name, "%s.R.paired.fastq.gz" % name, processors, name,"%s_renamed.fasta" % name)
     if "NULL" not in reduce:
         run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
         os.system("samtools index %s_renamed.bam" % name)
@@ -602,7 +565,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     #This is for the per contig coverage routine. This can likely be replaced
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep), name)
     subprocess.check_call("tr ' ' '\t' < %s.tmp.txt > %s.genome_size.txt" % (name, name), shell=True)
-    #get_coverage("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
     get_coverage_dev("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
     remove_column("%s.tmp.out" % name, name)
     sum_coverage("%s.coverage.out" % name, 3, name)
