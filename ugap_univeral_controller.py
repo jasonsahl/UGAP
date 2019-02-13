@@ -13,7 +13,7 @@ def test_file(option, opt_str, value, parser):
     try:
         with open(value): setattr(parser.values, option.dest, value)
     except IOError:
-        print '%s file cannot be opened' % option
+        print('%s file cannot be opened' % option)
         sys.exit()
 
 def test_options(option, opt_str, value, parser):
@@ -24,7 +24,7 @@ def test_options(option, opt_str, value, parser):
     elif "sge" in value:
         setattr(parser.values, option.dest, value)
     else:
-        print "option not supported, choose from slurm, torque, or sge"
+        print("option not supported, choose from slurm, torque, or sge")
         sys.exit()
 
 def parse_config_file(config_file):
@@ -63,8 +63,8 @@ def send_jobs(datasets,my_mem,controller,queue,time):
             input.write(job_string)
             input.close()
 
-            print job_string
-            print output.read()
+            print(job_string)
+            print(output.read())
         elif controller == "torque":
             memory = "mem=%s" % my_mem
             processors = "nodes=1:ppn=%s" % data[7]
@@ -81,8 +81,8 @@ cd $PBS_O_WORKDIR
             input.write(job_string)
             input.close()
 
-            print job_string
-            print output.read()
+            print(job_string)
+            print(output.read())
         elif controller == "sge":
             memory = "mem_free=%s" % my_mem
             job_string = """
@@ -96,8 +96,8 @@ cd $PBS_O_WORKDIR
             input.write(job_string)
             input.close()
 
-            print job_string
-            print output.read()
+            print(job_string)
+            print(output.read())
 
 def main(config_file, memory, controller, queue, time):
     datasets=parse_config_file(config_file)
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     mandatories = ["config_file"]
     for m in mandatories:
         if not options.__dict__[m]:
-            print "\nMust provide %s.\n" %m
+            print("\nMust provide %s.\n" %m)
             parser.print_help()
             exit(-1)
     main(options.config_file,options.memory,options.controller,options.queue,options.time)

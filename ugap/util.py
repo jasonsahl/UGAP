@@ -146,27 +146,29 @@ def get_coverage_dev(bam, size, name):
     subprocess.check_call("samtools depth %s > %s.tmp.out" % (bam,name), shell=True)
 
 def remove_column(temp_file, name):
-    infile = open(temp_file, "rU")
+    #infile = open(temp_file, "rU")
     outfile = open("%s.coverage.out" % name, "w")
     my_fields = [ ]
-    for line in infile:
-        fields=line.split()
-        del fields[1]
-        my_fields.append(fields)
-    for x in my_fields:
-        outfile.write("\t".join(x))
-        outfile.write("\n")
-    infile.close()
+    with open(temp_file) as infile:
+        for line in infile:
+            fields=line.split()
+            del fields[1]
+            my_fields.append(fields)
+        for x in my_fields:
+            outfile.write("\t".join(x))
+            outfile.write("\n")
+    #infile.close()
     outfile.close()
 
 def get_seq_length(ref, name):
     """uses BioPython in order to calculated the length of
     each fasta entry in the reference fasta"""
-    infile = open(ref, "rU")
+    #infile = open(ref, "rU")
     outfile = open("%s.tmp.txt" % name, "w")
-    for record in SeqIO.parse(infile, "fasta"):
-        outfile.write(str(record.id)+"\t"+str(len(record.seq))+"\n")
-    infile.close()
+    with open(ref) as infile:
+        for record in SeqIO.parse(infile, "fasta"):
+            outfile.write(str(record.id)+"\t"+str(len(record.seq))+"\n")
+    #infile.close()
     outfile.close()
 
 def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_path, length):
@@ -184,42 +186,45 @@ def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_
 
 def slice_assembly(infile, keep_length, outfile):
     """Keep length will be 200"""
-    input=open(infile)
+    #input=open(infile)
     output = open(outfile, "w")
     start=0
-    for record in SeqIO.parse(input,"fasta"):
-        seqlength = len(record.seq)
-        output.write(">"+str(record.id)+"\n")
-        if seqlength<250:
-            output.write(str(record.seq[start:keep_length])+"\n")
-        elif seqlength<350:
-            output.write(str(record.seq[100:300])+"\n")
-        elif seqlength<450:
-            output.write(str(record.seq[200:400])+"\n")
-        else:
-            output.write(str(record.seq[200:400])+"\n")
-    input.close()
+    with open(infile) as input:
+        for record in SeqIO.parse(input,"fasta"):
+            seqlength = len(record.seq)
+            output.write(">"+str(record.id)+"\n")
+            if seqlength<250:
+                output.write(str(record.seq[start:keep_length])+"\n")
+            elif seqlength<350:
+                output.write(str(record.seq[100:300])+"\n")
+            elif seqlength<450:
+                output.write(str(record.seq[200:400])+"\n")
+            else:
+                output.write(str(record.seq[200:400])+"\n")
+    #input.close()
     output.close()
 
 def find_missing_coverages(depth, merged, lengths, name):
     all_ids = {}
     outfile = open("%s.new.txt" % name, "w")
-    for line in open(depth, "U"):
-        fields = line.split()
-        if len(fields)==1:
-            pass
-        else:
-            all_ids.update({fields[0]:fields[1]})
+    with open(depth) as my_file:
+        for line in open(my_file):
+            fields = line.split()
+            if len(fields)==1:
+                pass
+            else:
+                all_ids.update({fields[0]:fields[1]})
     for k,v in all_ids.items():
         hits = []
         nohits = []
-        for line in open(merged, "U"):
-            fields = line.split()
-            if k == fields[0]:
-                outfile.write(line)
-                hits.append("1")
-            else:
-                nohits.append("1")
+        with open(merged) as my_file:
+            for line in my_file:
+                fields = line.split()
+                if k == fields[0]:
+                    outfile.write(line)
+                    hits.append("1")
+                else:
+                    nohits.append("1")
         allhits = hits + nohits
         if len(nohits)==len(allhits):
             outfile.write(str(k)+"\t"+"N/A"+"\t"+"no_blast_hit"+"\t"+str(lengths.get(k))+"\t"+str(v)+"\n")
@@ -231,26 +236,28 @@ def merge_blast_with_coverages(blast_report, coverages, lengths, name):
     out_list = []
     outfile = open("%s.depth_blast_merged.txt" % name, "w")
     #dictionary contains contig:coverage
-    for line in open(coverages, "U"):
-        fields = line.split()
-        if len(fields)==1:
-            pass
-        else:
-            coverage_dict.update({fields[0]:fields[1]})
-    for line in open(blast_report):
-        file_list = []
-        newline = line.strip()
-        if line.startswith("#"):
-            pass
-        else:
-            fields = newline.split("\t")
-            single_list = []
-            single_list.append(str(fields[0]))
-            single_list.append(str(fields[12]))
-            single_list.append(str(fields[10]))
-            single_list.append(str(lengths.get(fields[0])))
-            single_list.append(str(coverage_dict.get(fields[0])))
-            out_list.append(single_list)
+    with open(coverages) as my_file:
+        for line in my_file:
+            fields = line.split()
+            if len(fields)==1:
+                pass
+            else:
+                coverage_dict.update({fields[0]:fields[1]})
+    with open(blast_report) as my_blast:
+        for line in my_blast:
+            file_list = []
+            newline = line.strip()
+            if line.startswith("#"):
+                pass
+            else:
+                fields = newline.split("\t")
+                single_list = []
+                single_list.append(str(fields[0]))
+                single_list.append(str(fields[12]))
+                single_list.append(str(fields[10]))
+                single_list.append(str(lengths.get(fields[0])))
+                single_list.append(str(coverage_dict.get(fields[0])))
+                out_list.append(single_list)
     for alist in out_list:
         outfile.write("\t".join(alist))
         outfile.write("\n")
@@ -258,8 +265,9 @@ def merge_blast_with_coverages(blast_report, coverages, lengths, name):
 
 def get_contig_lengths(in_fasta):
     length_dict = {}
-    for record in SeqIO.parse(open(in_fasta, "U"), "fasta"):
-       length_dict.update({record.id:len(record.seq)})
+    with open(in_fasta) as my_fasta:
+        for record in SeqIO.parse(my_fasta, "fasta"):
+           length_dict.update({record.id:len(record.seq)})
     return length_dict
 
 def get_readFile_components(full_file_path):
@@ -336,17 +344,19 @@ def get_sequence_length_dev(fastq_in):
 
 def clean_fasta(fasta_in, fasta_out):
     seqrecords=[]
-    for record in SeqIO.parse(open(fasta_in), "fasta"):
-        seqrecords.append(record)
+    with open(fasta_in) as my_fasta:
+        for record in SeqIO.parse(my_fasta, "fasta"):
+            seqrecords.append(record)
     output_handle=open(fasta_out, "w")
     SeqIO.write(seqrecords, output_handle, "fasta")
     output_handle.close()
 
 def filter_seqs(fasta_in, keep, name):
     kept_sequences=[]
-    for record in SeqIO.parse(open(fasta_in), "fasta"):
-        if len(record.seq) >= int(keep):
-            kept_sequences.append(record)
+    with open(fasta_in) as my_fasta:
+        for record in SeqIO.parse(my_fasta, "fasta"):
+            if len(record.seq) >= int(keep):
+                kept_sequences.append(record)
     output_handle = open("%s.%s.spades.assembly.fasta" % (name,keep), "w")
     SeqIO.write(kept_sequences, output_handle, "fasta")
     output_handle.close()
@@ -383,9 +393,10 @@ def rename_multifasta(fasta_in, prefix, fasta_out):
     """rename mutli-fasta to something meaningful"""
     rec=1
     handle = open(fasta_out, "w")
-    for record in SeqIO.parse(open(fasta_in), "fasta"):
-        handle.write(">"+str(prefix)+"_"+str(autoIncrement())+"\n")
-        handle.write(str(record.seq)+"\n")
+    with open(fasta_in) as my_fasta:
+        for record in SeqIO.parse(my_fasta, "fasta"):
+            handle.write(">"+str(prefix)+"_"+str(autoIncrement())+"\n")
+            handle.write(str(record.seq)+"\n")
     handle.close()
 
 def rename_for_prokka(name_list):
@@ -397,12 +408,13 @@ def rename_for_prokka(name_list):
 def sum_totals(input, name, output):
     outfile = open(output, "w")
     coverages = []
-    for line in open(input, "U"):
-        fields = line.split()
-        if len(fields)<2:
-            pass
-        else:
-            coverages.append(float(fields[1]))
+    with open(input) as my_file:
+        for line in my_file:
+            fields = line.split()
+            if len(fields)<2:
+                pass
+            else:
+                coverages.append(float(fields[1]))
     outfile.write(str(name)+"\t"+str(sum(coverages)/len(coverages))+"\n")
     outfile.close()
 
