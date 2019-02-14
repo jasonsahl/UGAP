@@ -208,7 +208,7 @@ def find_missing_coverages(depth, merged, lengths, name):
     all_ids = {}
     outfile = open("%s.new.txt" % name, "w")
     with open(depth) as my_file:
-        for line in open(my_file):
+        for line in my_file:
             fields = line.split()
             if len(fields)==1:
                 pass
