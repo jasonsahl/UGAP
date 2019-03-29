@@ -87,7 +87,7 @@ if __name__ == "__main__":
                       action="callback", callback=test_dir, type="string")
     parser.add_option("-e", "--error", dest="error_corrector",
                       help="error corrector, choose from hammer or none, defaults to hammer",
-                      action="callback", callback=test_options, type="string", default="hammer")
+                      action="callback", callback=test_options, type="string", default="none")
     parser.add_option("-k", "--keep", dest="keep",
                       help="minimum length of contigs to keep, defaults to 200",
                       default="200", type="int")

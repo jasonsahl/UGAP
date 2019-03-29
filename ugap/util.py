@@ -508,7 +508,11 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
                 subprocess.check_call("skesa --gz --fastq %s.spades/corrected/%s.F.paired.fastq.00.0_0.cor.fastq.gz,%s.spades/corrected/%s.R.paired.fastq.00.0_0.cor.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,name,name,processors,name), shell=True)
         else:
             if assembler=="spades":
-                subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                if careful == "T":
+                    subprocess.check_call("spades.py --only-assembler --careful -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                else:
+                    subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+
             else:
                 subprocess.check_call("skesa --gz --fastq %s.F.paired.fastq.gz,%s.R.paired.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,processors,name), shell=True)
     """need to rename stuff here, copying over the Skesa files if they exist"""
