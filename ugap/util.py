@@ -613,5 +613,5 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         merge_blast_with_coverages("%s.blast.uniques" % name, "%s_3_depth.txt" % name, lengths, name)
         os.system("sort -u -k 1,1 %s.tmp.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name, start_path, name))
         find_missing_coverages("%s_3_depth.txt" % name, "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths, name)
-    else:
-        print("BLAST not run")
+    #else:
+    #    print("BLAST not run")
