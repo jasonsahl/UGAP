@@ -55,6 +55,7 @@ def main(assembler,directory,error_corrector,keep,temp_files,reduce,processors,c
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
     reduce_path = os.path.abspath("%s" % reduce)
+    #TODO:Need to change the default aligner to minimap
     dependencies = ['bwa','samtools']
     if phiX_filter == "T":
         dependencies.append("usearch")
@@ -89,7 +90,7 @@ if __name__ == "__main__":
                       help="error corrector, choose from hammer or none, defaults to hammer",
                       action="callback", callback=test_options, type="string", default="none")
     parser.add_option("-k", "--keep", dest="keep",
-                      help="minimum length of contigs to keep, defaults to 200",
+                      help="minimum length of contigs to keep, defaults to 500",
                       default="200", type="int")
     parser.add_option("-t", "--temp_files", dest="temp_files",
                       help="Keep temp files? Defaults to F",
@@ -104,7 +105,7 @@ if __name__ == "__main__":
                       help="use careful option in spades? Defaults to T",
                       action="callback", callback=test_truths, type="string", default="T")
     parser.add_option("-b", "--blast_nt", dest="blast_nt",
-                      help="PATH to BLAST nt database, defaults to NULL",
+                      help="PATH to BLAST nt database, defaults to NULL, if selected then NASP will be run",
                       action="store", type="string", default="NULL")
     parser.add_option("-o", "--cov_cutoff", dest="cov_cutoff",
                       help="cov_cutoff value in SPAdes, can be integer or 'off', defaults to 'auto'",

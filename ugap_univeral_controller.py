@@ -29,7 +29,6 @@ def test_options(option, opt_str, value, parser):
 
 def parse_config_file(config_file):
     datasets = ()
-    #infile = open(config_file)
     with open(config_file) as infile:
         for line in infile:
             if line.startswith("#"):
@@ -40,7 +39,7 @@ def parse_config_file(config_file):
                 datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10],fields[11],fields[12],fields[13],fields[14]),)+datasets
     return datasets
 
-def send_jobs(datasets,my_mem,controller,queue,time):
+def send_jobs(datasets,my_mem,controller,time):
     for data in datasets:
         if controller == "slurm":
             output, input = popen2('sbatch')
@@ -53,12 +52,11 @@ def send_jobs(datasets,my_mem,controller,queue,time):
             memory = "mem=%s" % my_mem
             job_string = \
 """#!/bin/sh
-#SBATCH -p %s
 #SBATCH -J %s
 #SBATCH -c %s
 #SBATCH --time %s
 #SBATCH  --mem=%s
-%s""" % (queue, job_name, data[7], walltime, my_mem, command)
+%s""" % (job_name,data[7],walltime,my_mem,command)
 
             input.write(job_string)
             input.close()
@@ -75,9 +73,8 @@ def send_jobs(datasets,my_mem,controller,queue,time):
 #PBS -l mem=%s
 #PBS -j oe
 #PBS -m a
-#PBS -q %s
 cd $PBS_O_WORKDIR
-%s""" % (job_name, walltime, processors, my_mem, queue, command)
+%s""" % (job_name,walltime,processors,my_mem,command)
             input.write(job_string)
             input.close()
 
@@ -88,10 +85,9 @@ cd $PBS_O_WORKDIR
             job_string = """
 #!/bin/bash
 #$ -N %s
-#$ -P %s
 #$ -l %s
 #$ -cwd
-%s""" % (job_name,queue,memory,command)
+%s""" % (job_name,memory,command)
 
             input.write(job_string)
             input.close()
@@ -99,10 +95,10 @@ cd $PBS_O_WORKDIR
             print(job_string)
             print(output.read())
 
-def main(config_file, memory, controller, queue, time):
+def main(config_file,memory,controller,time):
     datasets=parse_config_file(config_file)
     my_mem = memory
-    send_jobs(datasets,my_mem, controller, queue, time)
+    send_jobs(datasets,my_mem, controller, time)
 
 if __name__ == "__main__":
     usage="usage: %prog [options]"
@@ -116,9 +112,6 @@ if __name__ == "__main__":
     parser.add_option("-o", "--controller", dest="controller",
                       help="system to use: choose from slurm, torque [default], or sge",
                       action="callback", callback=test_options, type="string", default="torque")
-    parser.add_option("-q", "--queue", dest="queue",
-                      help="which queue to use?",
-                      action="store", type="string")
     parser.add_option("-t", "--time", dest="time",
                       help="how much time to request? Defaults to 48[h]",
                       action="store", type="int", default="48")
@@ -129,4 +122,4 @@ if __name__ == "__main__":
             print("\nMust provide %s.\n" %m)
             parser.print_help()
             exit(-1)
-    main(options.config_file,options.memory,options.controller,options.queue,options.time)
+    main(options.config_file,options.memory,options.controller,options.time)

@@ -8,7 +8,6 @@ from Bio import SeqIO
 import subprocess
 from subprocess import Popen
 import glob
-from igs.threading import functional as p_func
 import threading
 import decimal
 import re
@@ -67,19 +66,21 @@ def merge_files_by_column(column, file_1, file_2, out_file):
     that line ordering in the files do not match, so we read both files into memory
     and join them"""
     join_map = {}
-    for line in open(file_1):
-        line.strip()
-        row = line.split()
-        column_value = row.pop(column)
-        join_map[column_value] = row
-    for line in open(file_2):
-        line.strip()
-        row = line.split()
-        column_value = row.pop(column)
-        if column_value in join_map:
-            join_map[column_value].extend(row)
+    with open(file_1) as my_file:
+        for line in my_file:
+            line.strip()
+            row = line.split()
+            column_value = row.pop(column)
+            join_map[column_value] = row
+    with open(file_2) as my_file_2:
+        for line in my_file_2:
+            line.strip()
+            row = line.split()
+            column_value = row.pop(column)
+            if column_value in join_map:
+                join_map[column_value].extend(row)
     fout = open(out_file, 'w')
-    for k, v in join_map.iteritems():
+    for k, v in join_map.items():
         fout.write('\t'.join([k] + v) + '\n')
     fout.close()
 
@@ -137,16 +138,11 @@ def sum_coverage(coverage,cov,name):
     infile.close()
     outfile.close()
 
-def get_coverage(bam, size, name):
-    """does the actual work"""
-    subprocess.check_call("genomeCoverageBed -d -ibam %s -g %s > %s.tmp.out" % (bam,size,name), shell=True)
-
 def get_coverage_dev(bam, size, name):
     """trying out a variation, reducing the number of dependencies"""
     subprocess.check_call("samtools depth %s > %s.tmp.out" % (bam,name), shell=True)
 
 def remove_column(temp_file, name):
-    #infile = open(temp_file, "rU")
     outfile = open("%s.coverage.out" % name, "w")
     my_fields = [ ]
     with open(temp_file) as infile:
@@ -157,36 +153,19 @@ def remove_column(temp_file, name):
         for x in my_fields:
             outfile.write("\t".join(x))
             outfile.write("\n")
-    #infile.close()
     outfile.close()
 
 def get_seq_length(ref, name):
     """uses BioPython in order to calculated the length of
     each fasta entry in the reference fasta"""
-    #infile = open(ref, "rU")
     outfile = open("%s.tmp.txt" % name, "w")
     with open(ref) as infile:
         for record in SeqIO.parse(infile, "fasta"):
             outfile.write(str(record.id)+"\t"+str(len(record.seq))+"\n")
-    #infile.close()
     outfile.close()
-
-def run_trimmomatic(trim_path, processors, forward_path, reverse_path, ID, ugap_path, length):
-    args=['java','-jar','%s' % trim_path, 'PE', '-threads', '%s' % processors,
-              '%s' % forward_path, '%s' % reverse_path, '%s.F.paired.fastq.gz' % ID, 'F.unpaired.fastq.gz',
-	      '%s.R.paired.fastq.gz' % ID, 'R.unpaired.fastq.gz', 'ILLUMINACLIP:%s/bin/illumina_adapters_all.fasta:4:30:10:1:true' % ugap_path,
-	      'MINLEN:%s' % length]
-    vcf_fh = open('%s.trimmomatic.out' % ID, 'w')
-    log_fh = open('%s.trimmomatic.log' % ID, 'w')
-    try:
-        trim = Popen(args, stderr=vcf_fh, stdout=log_fh)
-        trim.wait()
-    except:
-        log_isg.logPrint("problem encountered with trimmomatic")
 
 def slice_assembly(infile, keep_length, outfile):
     """Keep length will be 200"""
-    #input=open(infile)
     output = open(outfile, "w")
     start=0
     with open(infile) as input:
@@ -206,7 +185,7 @@ def slice_assembly(infile, keep_length, outfile):
 
 def find_missing_coverages(depth, merged, lengths, name):
     all_ids = {}
-    outfile = open("%s.new.txt" % name, "w")
+    outfile = open("%s.new.txt" % name,"w")
     with open(depth) as my_file:
         for line in my_file:
             fields = line.split()
@@ -230,11 +209,11 @@ def find_missing_coverages(depth, merged, lengths, name):
             outfile.write(str(k)+"\t"+"N/A"+"\t"+"no_blast_hit"+"\t"+str(lengths.get(k))+"\t"+str(v)+"\n")
     outfile.close()
 
-def merge_blast_with_coverages(blast_report, coverages, lengths, name):
+def merge_blast_with_coverages(blast_report,coverages,lengths,name):
     from operator import itemgetter
     coverage_dict = {}
     out_list = []
-    outfile = open("%s.depth_blast_merged.txt" % name, "w")
+    outfile = open("%s.depth_blast_merged.txt" % name,"w")
     #dictionary contains contig:coverage
     with open(coverages) as my_file:
         for line in my_file:
@@ -263,10 +242,40 @@ def merge_blast_with_coverages(blast_report, coverages, lengths, name):
         outfile.write("\n")
     outfile.close()
 
+def merge_sendsketch_with_coverages(blast_report,coverages,lengths,name):
+    from operator import itemgetter
+    coverage_dict = {}
+    out_list = []
+    outfile = open("%s.depth_sendsketch_merged.txt" % name,"w")
+    #dictionary contains contig:coverage
+    with open(coverages) as my_file:
+        for line in my_file:
+            fields = line.split()
+            if len(fields)==1:
+                pass
+            else:
+                coverage_dict.update({fields[0]:fields[1]})
+    with open(blast_report) as my_blast:
+        for line in my_blast:
+            file_list = []
+            newline = line.strip()
+            fields = newline.split("\t")
+            #single_list = []
+            #single_list.append(str(fields[0]))
+            #single_list.append(str(fields[12]))
+            #single_list.append(str(fields[10]))
+            #single_list.append(str(lengths.get(fields[0])))
+            #single_list.append(str(coverage_dict.get(fields[0])))
+            out_list.append([fields[0],fields[1],fields[2],fields[3],str(coverage_dict.get(fields[0]))])
+    for alist in out_list:
+        outfile.write("\t".join(alist))
+        outfile.write("\n")
+    outfile.close()
+
 def get_contig_lengths(in_fasta):
     length_dict = {}
     with open(in_fasta) as my_fasta:
-        for record in SeqIO.parse(my_fasta, "fasta"):
+        for record in SeqIO.parse(my_fasta,"fasta"):
            length_dict.update({record.id:len(record.seq)})
     return length_dict
 
@@ -361,34 +370,6 @@ def filter_seqs(fasta_in, keep, name):
     SeqIO.write(kept_sequences, output_handle, "fasta")
     output_handle.close()
 
-def bwa(reference,read_1,read_2,sam_file, processors, log_file ,my_opts,name):
-    mem_arguments = ['bwa','mem','-v','2','-M','-t','%s' % processors]
-    if "null" in read_2:
-        mem_arguments.extend([reference,read_1])
-    else:
-        mem_arguments.extend([reference,read_1,read_2])
-    mem_arguments.extend(my_opts)
-    if log_file:
-       try:
-           log_fh = open(log_file, 'w')
-       except:
-           print(log_file,'could not open')
-    else:
-        log_fh = PIPE
-
-    try:
-        sam_fh = open(sam_file, 'w')
-    except:
-        print(sam_file, 'could not open')
-
-    arg_string = " ".join(mem_arguments)
-    subprocess.call("%s" % arg_string, shell=True, stdout = log_fh, stderr = log_fh)
-
-def run_bwa(read_1, read_2, processors, name, reference):
-    #read_group = '@RG\tID:%s\tSM:vac6wt\tPL:ILLUMINA\tPU:vac6wt' % name
-    other_opts = ["|","samtools","view","-uS","-","|","samtools","sort","-@","4","-","%s_renamed" % name]
-    bwa(reference,read_1,read_2,"%s.sam" % name,processors,"sam.log",other_opts,name)
-
 def rename_multifasta(fasta_in, prefix, fasta_out):
     """rename mutli-fasta to something meaningful"""
     rec=1
@@ -429,6 +410,29 @@ def autoIncrement():
     else:
         rec += pInterval
         return rec
+
+def run_sendsketch(fasta_in,name):
+    from Bio import SeqIO
+    import os
+    import subprocess
+    outfile = open("sendsketch_parsed.txt", "w")
+    with open(fasta_in) as my_fasta:
+        for record in SeqIO.parse(my_fasta, "fasta"):
+            tmpfile = open("tmp.file.fasta", "w")
+            tmpfile.write(">"+str(record.id)+"\n"+str(record.seq)+"\n")
+            tmpfile.close()
+            subprocess.check_call("sendsketch.sh overwrite=true address=nt in=tmp.file.fasta out=%s.sendsketch.out" % record.id,stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'), shell=True)
+            with open("%s.sendsketch.out" % record.id) as my_file:
+                try:
+                    read_line = my_file.readlines()[3].strip()
+                    fields = read_line.split("\t")
+                    desired_fields = [record.id,fields[0],str(len(record.seq)),fields[10]]
+                    outfile.write("\t".join(desired_fields)+"\n")
+                except:
+                    desired_fields = [record.id,"N/A",str(len(record.seq)),"no_hits"]
+                    outfile.write("\t".join(desired_fields)+"\n")
+            os.system("rm tmp.file.fasta %s.sendsketch.out" % record.id)
+    outfile.close()
 
 def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,phiX_filter):
     """This should, in theory, get rid of phiX if it is present, assuming it's not in the reference"""
@@ -471,7 +475,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
     else:
-        #run_trimmomatic(TRIM_PATH, processors, "%s.F.tmp.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name, name, UGAP_PATH, length)
         subprocess.check_call("bbduk.sh in=%s.F.tmp.fastq.gz in2=%s.R.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz out2=%s.R.paired.fastq.gz minlen=%s overwrite=true" % (name,name,UGAP_PATH,name,name,length), shell=True)
         if phiX_filter == "T":
             try:
@@ -527,16 +530,21 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     #Cleans up the names for downstream apps
     rename_multifasta("%s_cleaned.fasta" % name, name, "%s_renamed.fasta" % name)
     #Here I align reads to this new assembly: 1st instance of read alignment
-    subprocess.check_call("bwa index %s_renamed.fasta > /dev/null 2>&1" % name, shell=True)
+    subprocess.check_call("bwa index %s_renamed.fasta" % name,stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     #Index renamed.fasta for calling variants
-    os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
-    if "NULL" not in reduce:
-        run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s_renamed.fasta" % name)
-        os.system("samtools index %s_renamed.bam" % name)
-    else:
-        #align depleted reads if the reduced option is selected. This section is currently being tested
-        run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
-        os.system("samtools index %s_renamed.bam" % name)
+    #os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
+    try:
+        if "NULL" not in reduce:
+            subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s_1.fastq.gz %s_2.fastq.gz | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,name,name,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+            os.system("samtools index %s_renamed.bam" % name)
+        else:
+            #align depleted reads if the reduced option is selected. This section is currently being tested
+            print("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,reverse_path,name))
+            subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,reverse_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+            os.system("samtools index %s_renamed.bam" % name)
+    except:
+        print("problems running bwa")
+        sys.exit()
     print("running Pilon")
     try:
         os.system("java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
@@ -562,22 +570,19 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         else:
             """Tries to fix the short read limitation. Need to test"""
             small_name = rename_for_prokka(name_chars)
-            #os.system("cp %s.%s.spades.assembly.fasta %s.prokka.fasta" % (name,keep,small_name))
             rename_multifasta("%s.%s.spades.assembly.fasta" % (name,keep), small_name, "%s.prokka.fasta" % small_name)
             os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.prokka.fasta > /dev/null 2>&1" % (small_name,small_name,small_name,keep,small_name,small_name))
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
-        print("Prokka was not run, so no annotation files will be included")
+        print("Prokka was not run or failed, so no annotation files will be included")
     #Copies these files to your output directory, whether or not the previous commands were successful
     os.system("cp %s.%s.spades.assembly.fasta %s/UGAP_assembly_results/%s_final_assembly.fasta" % (name,keep,start_path,name))
     #I need to check the number of contigs, then decide whether or not to run bwa again
-    os.system("bwa index %s.%s.spades.assembly.fasta > /dev/null 2>&1" % (name,keep))
+    subprocess.check_call("bwa index %s.%s.spades.assembly.fasta" % (name,keep),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     if "NULL" not in reduce:
-        run_bwa("%s_1.fastq.gz" % name, "%s_2.fastq.gz" % name, processors, name, "%s.%s.spades.assembly.fasta" % (name,keep))
+        subprocess.check_call("bwa mem -v 2 -M -t 4 %s.%s.spades.assembly.fasta %s_1.fastq.gz %s_2.fastq.gz | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,keep,name,name,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     else:
-        #run_bwa(forward_path, reverse_path, processors, name, "%s_renamed.fasta" % name)
-        run_bwa(forward_path,reverse_path,processors,name,"%s.%s.spades.assembly.fasta" % (name,keep))
-    #make_bam("%s.sam" % name, name)
+        subprocess.check_call("bwa mem -v 2 -M -t 4 %s.%s.spades.assembly.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,keep,forward_path,reverse_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     #This is for the per contig coverage routine. This can likely be replaced
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep), name)
     subprocess.check_call("tr ' ' '\t' < %s.tmp.txt > %s.genome_size.txt" % (name, name), shell=True)
@@ -591,16 +596,22 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     os.system("cp %s_3_depth.txt %s/UGAP_assembly_results" % (name,start_path))
     sum_totals("%s_3_depth.txt" % name, name, "%s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
     #End of section that can likely be replaced
-    if "NULL" not in blast_nt:
+    if "NULL" in blast_nt:
+        """This means that sendsketch will be run"""
+        lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
+        run_sendsketch("%s.%s.spades.assembly.fasta" % (name,keep),name)
+        os.system("cp sendsketch_parsed.txt %s/UGAP_assembly_results/%s_sendsketch.txt" % (start_path,name))
+        merge_sendsketch_with_coverages("sendsketch_parsed.txt","%s_3_depth.txt" % name,lengths,name)
+        os.system("sed 's/ /_/g' %s.depth_sendsketch_merged.txt > %s.tmp.txt" % (name,name))
+        os.system("sort -gr -k 5,5 %s.tmp.txt > %s/UGAP_assembly_results/%s.depth_sendsketch_merged.txt" % (name, start_path, name))
+    else:
         slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),int(keep),"%s.chunks.fasta" % name)
         lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
         subprocess.check_call("blastn -task blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out %s.blast.out" % (name, blast_nt, processors, name), shell=True)
         os.system("cp %s.blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (name, start_path, name))
         os.system("sort -u -k 1,1 %s.blast.out > %s.blast.uniques" % (name, name))
         merge_blast_with_coverages("%s.blast.uniques" % name, "%s_3_depth.txt" % name, lengths, name)
-        os.system("sed 's/ /_/g' %s.depth_blast_merged.txt > %s.tmp.txt" % (name,name))
         os.system("sort -u -k 1,1 %s.tmp.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name, start_path, name))
         find_missing_coverages("%s_3_depth.txt" % name, "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths, name)
-        os.system("sort -u -k 1,1 %s.new.txt | sort -gr -k 5,5 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name, start_path, name))
     else:
         print("BLAST not run")
