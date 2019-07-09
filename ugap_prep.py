@@ -91,7 +91,7 @@ if __name__ == "__main__":
                       action="callback", callback=test_options, type="string", default="none")
     parser.add_option("-k", "--keep", dest="keep",
                       help="minimum length of contigs to keep, defaults to 500",
-                      default="200", type="int")
+                      default="500", type="int")
     parser.add_option("-t", "--temp_files", dest="temp_files",
                       help="Keep temp files? Defaults to F",
                       action="callback", callback=test_truths, type="string", default="F")
