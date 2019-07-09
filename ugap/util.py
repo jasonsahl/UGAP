@@ -117,25 +117,26 @@ def doc(coverage, genome_size, name, suffix):
     outfile.close()
 
 def sum_coverage(coverage,cov,name):
-    infile = open(coverage)
+    #infile = open(coverage)
     outfile = open("%s.amount_covered.txt" % name, "w")
     all = []
     dict = {}
-    for line in infile:
-        fields=line.split()
-        fields = map(lambda s: s.strip(), fields)
-        all.append(fields)
+    with open(coverage) as infile:
+        for line in infile:
+            fields=line.split()
+            fields = map(lambda s: s.strip(), fields)
+            all.append(fields)
     for x, y in all:
         if int(y)>int(cov):
-           try:
+            try:
                dict[x].append(y)
-           except KeyError:
+            except KeyError:
                dict[x] = [y]
         else:
-               pass
+            pass
     for k,v in dict.items():
-        outfile.write(str(k)+"\t"+str(len(v)))
-    infile.close()
+        outfile.write(str(k)+"\t"+str(len(v))+"\n")
+    #infile.close()
     outfile.close()
 
 def get_coverage_dev(bam, size, name):
@@ -165,7 +166,6 @@ def get_seq_length(ref, name):
     outfile.close()
 
 def slice_assembly(infile, keep_length, outfile):
-    """Keep length will be 200"""
     output = open(outfile, "w")
     start=0
     with open(infile) as input:
@@ -173,14 +173,13 @@ def slice_assembly(infile, keep_length, outfile):
             seqlength = len(record.seq)
             output.write(">"+str(record.id)+"\n")
             if seqlength<250:
-                output.write(str(record.seq[start:keep_length])+"\n")
+                output.write(str(record.seq[start:200])+"\n")
             elif seqlength<350:
                 output.write(str(record.seq[100:300])+"\n")
             elif seqlength<450:
                 output.write(str(record.seq[200:400])+"\n")
             else:
                 output.write(str(record.seq[200:400])+"\n")
-    #input.close()
     output.close()
 
 def find_missing_coverages(depth, merged, lengths, name):
@@ -552,8 +551,8 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         print("problem running Pilon. Exiting....")
         #instead of exiting here, I could just change the name and keep going
         sys.exit()
-    rename_multifasta("%s_pilon.fasta" % name, name, "%s_final_assembly.fasta" % name)
-    filter_seqs("%s_final_assembly.fasta" % name, keep, name)
+    rename_multifasta("%s_pilon.fasta" % name,name,"%s_final_assembly.fasta" % name)
+    filter_seqs("%s_final_assembly.fasta" % name,keep,name)
     #filters again by minimum length, output is named %s.%s.spades.assembly.fasta
     try:
         subprocess.check_call("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep), shell=True, stderr=open(os.devnull, "w"))
@@ -571,7 +570,9 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             """Tries to fix the short read limitation. Need to test"""
             small_name = rename_for_prokka(name_chars)
             rename_multifasta("%s.%s.spades.assembly.fasta" % (name,keep), small_name, "%s.prokka.fasta" % small_name)
-            os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.prokka.fasta > /dev/null 2>&1" % (small_name,small_name,small_name,keep,small_name,small_name))
+            #os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.prokka.fasta > /dev/null 2>&1" % (small_name,small_name,small_name,keep,small_name,small_name))
+            subprocess.check_call("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.prokka.fasta" % (small_name,small_name,small_name,keep,small_name,small_name),
+            stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
     except:
         print("Prokka was not run or failed, so no annotation files will be included")
@@ -589,7 +590,8 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     get_coverage_dev("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
     remove_column("%s.tmp.out" % name, name)
     sum_coverage("%s.coverage.out" % name, 3, name)
-    merge_files_by_column(0,"%s.genome_size.txt" % name, "%s.amount_covered.txt" % name, "%s.results.txt" % name)
+    #Problems here
+    merge_files_by_column(0,"%s.genome_size.txt" % name,"%s.amount_covered.txt" % name,"%s.results.txt" % name)
     report_stats("%s.results.txt" % name, "%s_renamed_header.bam" % name, name)
     """The 3 suffix here is totally arbitrary and should be changed"""
     doc("%s.coverage.out" % name, "%s.genome_size.txt" % name, name, 3)
