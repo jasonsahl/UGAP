@@ -9,7 +9,7 @@ import sys
 import subprocess
 try:
     from ugap.util import *
-    from igs.utils import logging as log_isg
+    #from igs.utils import logging as log_isg
 except:
     print("Environment not set correctly, correct ugap_single.py environment")
     sys.exit()

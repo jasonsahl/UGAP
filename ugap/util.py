@@ -596,22 +596,23 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     os.system("cp %s_3_depth.txt %s/UGAP_assembly_results" % (name,start_path))
     sum_totals("%s_3_depth.txt" % name, name, "%s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
     #End of section that can likely be replaced
-    if "NULL" in blast_nt:
-        """This means that sendsketch will be run"""
-        lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
-        run_sendsketch("%s.%s.spades.assembly.fasta" % (name,keep),name)
-        os.system("cp sendsketch_parsed.txt %s/UGAP_assembly_results/%s_sendsketch.txt" % (start_path,name))
-        merge_sendsketch_with_coverages("sendsketch_parsed.txt","%s_3_depth.txt" % name,lengths,name)
-        os.system("sed 's/ /_/g' %s.depth_sendsketch_merged.txt > %s.tmp.txt" % (name,name))
-        os.system("sort -gr -k 5,5 %s.tmp.txt > %s/UGAP_assembly_results/%s.depth_sendsketch_merged.txt" % (name, start_path, name))
-    else:
-        slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),int(keep),"%s.chunks.fasta" % name)
-        lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
-        subprocess.check_call("blastn -task blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out %s.blast.out" % (name, blast_nt, processors, name), shell=True)
-        os.system("cp %s.blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (name, start_path, name))
-        os.system("sort -u -k 1,1 %s.blast.out > %s.blast.uniques" % (name, name))
-        merge_blast_with_coverages("%s.blast.uniques" % name, "%s_3_depth.txt" % name, lengths, name)
-        os.system("sort -u -k 1,1 %s.tmp.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name, start_path, name))
-        find_missing_coverages("%s_3_depth.txt" % name, "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths, name)
-    #else:
-    #    print("BLAST not run")
+    try:
+        if "NULL" in blast_nt:
+            """This means that sendsketch will be run"""
+            lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
+            run_sendsketch("%s.%s.spades.assembly.fasta" % (name,keep),name)
+            os.system("cp sendsketch_parsed.txt %s/UGAP_assembly_results/%s_sendsketch.txt" % (start_path,name))
+            merge_sendsketch_with_coverages("sendsketch_parsed.txt","%s_3_depth.txt" % name,lengths,name)
+            os.system("sed 's/ /_/g' %s.depth_sendsketch_merged.txt > %s.tmp.txt" % (name,name))
+            os.system("sort -gr -k 5,5 %s.tmp.txt > %s/UGAP_assembly_results/%s.depth_sendsketch_merged.txt" % (name, start_path, name))
+        else:
+            slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),int(keep),"%s.chunks.fasta" % name)
+            lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
+            subprocess.check_call("blastn -task blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out %s.blast.out" % (name, blast_nt, processors, name), shell=True)
+            os.system("cp %s.blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (name, start_path, name))
+            os.system("sort -u -k 1,1 %s.blast.out > %s.blast.uniques" % (name, name))
+            merge_blast_with_coverages("%s.blast.uniques" % name, "%s_3_depth.txt" % name, lengths, name)
+            os.system("sort -u -k 1,1 %s.tmp.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name, start_path, name))
+            find_missing_coverages("%s_3_depth.txt" % name, "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths, name)
+    except:
+        print("BLAST not run")
