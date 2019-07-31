@@ -13,6 +13,9 @@ import decimal
 import re
 import sys
 
+def subsample_reads_dev(input_fastq,output_fastq):
+    #Trying out seqtk
+    subprocess.check_call("seqtk sample -s100 %s 4000000 > %s" % (input_fastq,output_fastq),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'), shell=True)
 
 def subsample_reads(input_fastq,output_fastq):
     #adapted from pythonforbiologists.com example
@@ -446,8 +449,10 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             os.system("samtools index %s_renamed.bam" % name)
             os.system("bam2fastq -o %s#.fastq --no-aligned %s_renamed.bam > %s.reduce_results.txt" % (name,name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
-            subsample_reads("%s_1.fastq.gz" % name, "%s.F.tmp.fastq.gz" % name)
-            subsample_reads("%s_2.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name)
+            #subsample_reads("%s_1.fastq.gz" % name, "%s.F.tmp.fastq.gz" % name)
+            #subsample_reads("%s_2.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name)
+            subsample_reads_dev("%s_1.fastq.gz" % name, "%s.F.tmp.fastq.gz" % name)
+            subsample_reads_dev("%s_2.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name)
         else:
             print("to deplete reads, you need to have bam2fastq installed. Reads will not be depleted")
     """The Ks parameter is obsolete in Spade 3.7+, this will likely be removed in the future"""
@@ -467,8 +472,10 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     if os.path.isfile("%s.F.tmp.fastq.gz" % name):
         pass
     else:
-        subsample_reads(forward_path, "%s.F.tmp.fastq.gz" % name)
-        subsample_reads(reverse_path, "%s.R.tmp.fastq.gz" % name)
+        #subsample_reads(forward_path, "%s.F.tmp.fastq.gz" % name)
+        #subsample_reads(reverse_path, "%s.R.tmp.fastq.gz" % name)
+        subsample_reads_dev(forward_path, "%s.F.tmp.fastq.gz" % name)
+        subsample_reads_dev(reverse_path, "%s.R.tmp.fastq.gz" % name)
     #If trimmomatic has already been run, don't run again, trimmomatic requires PAIRED reads
     #Checkpoint 2: trimmomatic, usearch
     if os.path.isfile("%s.F.paired.fastq.gz" % name):

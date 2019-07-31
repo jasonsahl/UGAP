@@ -89,9 +89,9 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
         reduce_path=os.path.abspath("%s" % reduce)
     """test for dependencies"""
     if "spades" in assembler:
-        dependencies = ['bwa','samtools','spades.py','genomeCoverageBed']
+        dependencies = ['bwa','samtools','spades.py','genomeCoverageBed','seqtk']
     else:
-        dependencies = ['bwa','samtools','skesa','genomeCoverageBed']
+        dependencies = ['bwa','samtools','skesa','genomeCoverageBed','seqtk']
     if "NULL" not in blast_nt:
         rx = subprocess.call(['which', 'blastn'])
         if rx == 0:
