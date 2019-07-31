@@ -17,14 +17,15 @@ def subsample_reads_dev(input_fastq,output_fastq):
     #Trying out seqtk
     from gzip import GzipFile
     import gzip
+    number_to_sample = 4000000
     with GzipFile(input_fastq) as input:
         num_lines = sum([1 for line in input])
         total_records = int(num_lines / 4)
         if (int(total_records)-5000)<int(number_to_sample):
             os.system("cp %s %s" % (input_fastq,output_fastq))
         else:
-            subprocess.check_call("seqtk sample -s100 %s 4000000 > tmp.fastq" % (input_fastq,output_fastq),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'), shell=True)
-            os.system("mv tmp.fastq %s" % output_fastq)
+            subprocess.check_call("seqtk sample -s100 %s 4000000 | gzip > tmp.fastq.gz" % (input_fastq,output_fastq),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'), shell=True)
+            os.system("mv tmp.fastq.gz %s" % output_fastq)
 
 def subsample_reads(input_fastq,output_fastq):
     #adapted from pythonforbiologists.com example
