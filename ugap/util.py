@@ -15,6 +15,8 @@ import sys
 
 def subsample_reads_dev(input_fastq,output_fastq):
     #Trying out seqtk
+    from gzip import GzipFile
+    import gzip
     with GzipFile(input_fastq) as input:
         num_lines = sum([1 for line in input])
         total_records = int(num_lines / 4)
