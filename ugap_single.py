@@ -77,14 +77,14 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
     forward_path = os.path.abspath("%s" % forward_read)
     reverse_path = os.path.abspath("%s" % reverse_read)
     blast_nt_path = os.path.abspath("%s" % blast_nt)
-    try:
+    if os.path.exists('%s/UGAP_assembly_results' % start_path):
+        pass
+    else:
         os.makedirs('%s/UGAP_assembly_results' % start_path)
-    except OSError, e:
-        if e.errno != errno.EEXIST:raise
-    try:
+    if os.path.exists('%s/%s.work_directory' % (start_path,name)):
+        pass
+    else:
         os.makedirs('%s/%s.work_directory' % (start_path,name))
-    except OSError, e:
-        if e.errno != errno.EEXIST:raise
     if "NULL" != reduce:
         reduce_path=os.path.abspath("%s" % reduce)
     """test for dependencies"""
