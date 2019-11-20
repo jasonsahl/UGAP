@@ -55,8 +55,8 @@ def send_jobs(datasets,my_mem,controller,time):
             #input.write(job_string)
             #input.close()
 
-            print("sbatch %s '%s' % (job_string,command))
-            os.system("sbatch %s '%s'" % (job_string,command))
+            print('sbatch %s "%s"'' % (job_string,command))
+            os.system('sbatch %s "%s"' % (job_string,command))
             #print(output.read())
 
 def main(config_file,memory,controller,time):
