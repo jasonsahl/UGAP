@@ -6,8 +6,7 @@
 import sys
 import os
 from optparse import OptionParser
-from popen2 import popen2
-
+#from popen2 import popen2
 
 def test_file(option, opt_str, value, parser):
     try:
@@ -41,10 +40,6 @@ def parse_config_file(config_file):
 
 def send_jobs(datasets,my_mem,controller,time):
     for data in datasets:
-        if controller == "slurm":
-            output, input = popen2('sbatch')
-        else:
-            output, input = popen2('qsub')
         job_name = "UGAP_%s" % data[0]
         walltime = "%s:00:00" % time
         command = "python %s/ugap_single.py -c %s -a %s -n %s -f %s -v %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s -j %s" % (data[9],data[14],data[13],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12])
@@ -58,42 +53,12 @@ def send_jobs(datasets,my_mem,controller,time):
 #SBATCH  --mem=%s
 %s""" % (job_name,data[7],walltime,my_mem,command)
 
-            input.write(job_string)
-            input.close()
+            #input.write(job_string)
+            #input.close()
 
             print(job_string)
-            print(output.read())
-        elif controller == "torque":
-            memory = "mem=%s" % my_mem
-            processors = "nodes=1:ppn=%s" % data[7]
-            job_string = """#!/bin/bash
-#PBS -N %s
-#PBS -l walltime=%s
-#PBS -l %s
-#PBS -l mem=%s
-#PBS -j oe
-#PBS -m a
-cd $PBS_O_WORKDIR
-%s""" % (job_name,walltime,processors,my_mem,command)
-            input.write(job_string)
-            input.close()
-
-            print(job_string)
-            print(output.read())
-        elif controller == "sge":
-            memory = "mem_free=%s" % my_mem
-            job_string = """
-#!/bin/bash
-#$ -N %s
-#$ -l %s
-#$ -cwd
-%s""" % (job_name,memory,command)
-
-            input.write(job_string)
-            input.close()
-
-            print(job_string)
-            print(output.read())
+            os.system("sbatch %s" % job_string)
+            #print(output.read())
 
 def main(config_file,memory,controller,time):
     datasets=parse_config_file(config_file)

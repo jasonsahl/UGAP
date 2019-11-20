@@ -27,38 +27,6 @@ def subsample_reads_dev(input_fastq,output_fastq):
             subprocess.check_call("seqtk sample -s100 %s 4000000 | gzip > tmp.fastq.gz" % input_fastq,stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'), shell=True)
             os.system("mv tmp.fastq.gz %s" % output_fastq)
 
-def subsample_reads(input_fastq,output_fastq):
-    #adapted from pythonforbiologists.com example
-    from gzip import GzipFile
-    import gzip
-    import random
-    """I changed this on 8/15/2016: Testing to see if this is enough or whether we should still increase"""
-    #What is the right number to subsample? 4 million should be more than enough for bacteria
-    number_to_sample = 4000000
-    with GzipFile(input_fastq) as input:
-        num_lines = sum([1 for line in input])
-        total_records = int(num_lines / 4)
-    if (int(total_records)-5000)<int(number_to_sample):
-        os.system("cp %s %s" % (input_fastq,output_fastq))
-    else:
-        outfile = gzip.open(output_fastq, "w")
-        output_sequence_sets = (set(random.sample(xrange(total_records + 1), number_to_sample)))
-        record_number = 0
-        with GzipFile(input_fastq) as input:
-            for line1 in input:
-                line2 = input.next()
-                line3 = input.next()
-                line4 = input.next()
-                if record_number in output_sequence_sets:
-                    outfile.write(line1)
-                    outfile.write(line2)
-                    outfile.write(line3)
-                    outfile.write(line4)
-                else:
-                    pass
-                record_number += 1
-        outfile.close()
-
 def report_stats(results, bam, name):
     outfile = open("%s_breadth.txt" % name, "w")
     outfile.write(name)
@@ -130,7 +98,6 @@ def doc(coverage, genome_size, name, suffix):
     outfile.close()
 
 def sum_coverage(coverage,cov,name):
-    #infile = open(coverage)
     outfile = open("%s.amount_covered.txt" % name, "w")
     all = []
     dict = {}
@@ -149,7 +116,6 @@ def sum_coverage(coverage,cov,name):
             pass
     for k,v in dict.items():
         outfile.write(str(k)+"\t"+str(len(v))+"\n")
-    #infile.close()
     outfile.close()
 
 def get_coverage_dev(bam, size, name):
@@ -272,12 +238,6 @@ def merge_sendsketch_with_coverages(blast_report,coverages,lengths,name):
             file_list = []
             newline = line.strip()
             fields = newline.split("\t")
-            #single_list = []
-            #single_list.append(str(fields[0]))
-            #single_list.append(str(fields[12]))
-            #single_list.append(str(fields[10]))
-            #single_list.append(str(lengths.get(fields[0])))
-            #single_list.append(str(coverage_dict.get(fields[0])))
             out_list.append([fields[0],fields[1],fields[2],fields[3],str(coverage_dict.get(fields[0]))])
     for alist in out_list:
         outfile.write("\t".join(alist))
@@ -459,8 +419,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             os.system("samtools index %s_renamed.bam" % name)
             os.system("bam2fastq -o %s#.fastq --no-aligned %s_renamed.bam > %s.reduce_results.txt" % (name,name,name))
             os.system("gzip %s_1.fastq %s_2.fastq" % (name,name))
-            #subsample_reads("%s_1.fastq.gz" % name, "%s.F.tmp.fastq.gz" % name)
-            #subsample_reads("%s_2.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name)
             subsample_reads_dev("%s_1.fastq.gz" % name, "%s.F.tmp.fastq.gz" % name)
             subsample_reads_dev("%s_2.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name)
         else:
@@ -482,8 +440,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     if os.path.isfile("%s.F.tmp.fastq.gz" % name):
         pass
     else:
-        #subsample_reads(forward_path, "%s.F.tmp.fastq.gz" % name)
-        #subsample_reads(reverse_path, "%s.R.tmp.fastq.gz" % name)
         subsample_reads_dev(forward_path, "%s.F.tmp.fastq.gz" % name)
         subsample_reads_dev(reverse_path, "%s.R.tmp.fastq.gz" % name)
     #If trimmomatic has already been run, don't run again, trimmomatic requires PAIRED reads
@@ -587,7 +543,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             """Tries to fix the short read limitation. Need to test"""
             small_name = rename_for_prokka(name_chars)
             rename_multifasta("%s.%s.spades.assembly.fasta" % (name,keep), small_name, "%s.prokka.fasta" % small_name)
-            #os.system("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.prokka.fasta > /dev/null 2>&1" % (small_name,small_name,small_name,keep,small_name,small_name))
             subprocess.check_call("prokka --prefix %s --locustag %s --centre %s --compliant --mincontiglen %s --strain %s %s.prokka.fasta" % (small_name,small_name,small_name,keep,small_name,small_name),
             stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
         subprocess.check_call("cp %s/*.* %s/UGAP_assembly_results" % (name,start_path), shell=True, stderr=open(os.devnull, "w"))
@@ -607,7 +562,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     get_coverage_dev("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
     remove_column("%s.tmp.out" % name, name)
     sum_coverage("%s.coverage.out" % name, 3, name)
-    #Problems here
     merge_files_by_column(0,"%s.genome_size.txt" % name,"%s.amount_covered.txt" % name,"%s.results.txt" % name)
     report_stats("%s.results.txt" % name, "%s_renamed_header.bam" % name, name)
     """The 3 suffix here is totally arbitrary and should be changed"""
@@ -631,7 +585,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             os.system("cp %s.blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (name, start_path, name))
             os.system("sort -u -k 1,1 %s.blast.out > %s.blast.uniques" % (name, name))
             merge_blast_with_coverages("%s.blast.uniques" % name, "%s_3_depth.txt" % name, lengths, name)
-            #os.system("sort -u -k 1,1 %s.depth_blast_merged.txt | sort -gr -k 3,3 > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name, start_path, name))
             os.system("awk '{print $NF,$0}' %s.depth_blast_merged.txt | sort -nr | cut -f2- -d' ' > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name,start_path,name))
             find_missing_coverages("%s_3_depth.txt" % name, "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths, name)
     except:

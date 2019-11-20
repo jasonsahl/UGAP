@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-"""UGAP with PBS"""
+"""Prep UGAP for running with the controller"""
 
 """Step1 - generate input files
-that can then be distributed to the PBS system"""
+that can then be distributed to the job management system"""
 
 from optparse import OptionParser
 import re
@@ -56,7 +56,7 @@ def main(assembler,directory,error_corrector,keep,temp_files,reduce,processors,c
     fileSets=read_file_sets("%s" % dir_path)
     reduce_path = os.path.abspath("%s" % reduce)
     #TODO:Need to change the default aligner to minimap
-    dependencies = ['bwa','samtools']
+    dependencies = ['bwa','samtools','seqtk']
     if phiX_filter == "T":
         dependencies.append("usearch")
     if assembler == "spades":
