@@ -75,7 +75,10 @@ def main(assembler,directory,error_corrector,keep,temp_files,reduce,processors,c
             print("%s is not in your path, but needs to be!" % dependency)
             sys.exit()
     for k,v in fileSets.items():
-        print(k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)+"\t"+str(phiX_filter)+"\t"+str(assembler)+"\t"+str(adapter_trimmer))
+        if len(v) == 2:
+            print(k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)+"\t"+str(phiX_filter)+"\t"+str(assembler)+"\t"+str(adapter_trimmer)+"\t"+"PE")
+        elif len(v) == 1:
+            print(k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)+"\t"+str(phiX_filter)+"\t"+str(assembler)+"\t"+str(adapter_trimmer)+"\t"+"SE")
 
 if __name__ == "__main__":
     usage="usage: %prog [options]"

@@ -61,7 +61,7 @@ def autoIncrement():
         return rec
 
 def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,processors,
-    careful,ugap_path,blast_nt,cov_cutoff,filter_phiX,assembler,adapter_trimmer):
+    careful,ugap_path,blast_nt,cov_cutoff,filter_phiX,assembler,adapter_trimmer,sample_type):
     UGAP_PATH=ugap_path
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic.jar"
@@ -107,16 +107,17 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
             sys.exit()
     """done checking for dependencies"""
     os.chdir("%s/%s.work_directory" % (start_path,name))
+    #This is where I really need to focus
     if "NULL" not in reduce:
         if "NULL" not in blast_nt:
-            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX,sample_type)
         else:
-            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX,sample_type)
     else:
         if "NULL" not in blast_nt:
-            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX,sample_type)
         else:
-            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX,sample_type)
     os.chdir("%s" % start_path)
     if temp_files == "F":
         os.system("rm -rf %s.work_directory" % name)
@@ -169,6 +170,9 @@ if __name__ == "__main__":
     parser.add_option("-c", "--adapter_trimmer", dest="adapter_trimmer",
                       help="adapter trimmer, choose from trimmomatic or bbduk[default]",
                       action="store", type="string", default="T")
+    parser.add_option("-d", "--sample_type", dest="sample_type",
+                      help="PE or SE?",
+                      action="store", type="string", default="T")
     options, args = parser.parse_args()
     mandatories = ["forward_read","name","ugap_path"]
     for m in mandatories:
@@ -178,4 +182,4 @@ if __name__ == "__main__":
             exit(-1)
     main(options.forward_read,options.name,options.reverse_read,options.error_corrector,options.keep,
          options.temp_files,options.reduce,options.processors,options.careful,options.ugap_path,options.blast_nt,
-         options.cov_cutoff,options.filter_phiX,options.assembler,options.adapter_trimmer)
+         options.cov_cutoff,options.filter_phiX,options.assembler,options.adapter_trimmer,options.sample_type)
