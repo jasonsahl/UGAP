@@ -300,17 +300,60 @@ def read_file_sets(dir_path):
         else:
             fileSets[sample] = [forward_reads[sample]] # no reverse found
             num_single_readsets += 1
-            logging.info('#Warning, could not find pair for read:' + forward_reads[sample])
     for sample in reverse_reads:
         if sample not in fileSets:
             fileSets[sample] = reverse_reads[sample] # no forward found
             num_single_readsets += 1
-            logging.info('#Warning, could not find pair for read:' + reverse_reads[sample])
-    if num_paired_readsets > 0:
-        logging.info('Total paired readsets found:' + str(num_paired_readsets))
-    if num_single_readsets > 0:
-        logging.info('Total single reads found:' + str(num_single_readsets))
     return fileSets
+
+#def read_file_sets(dir_path):
+#    fileSets = {}
+#    forward_reads = {}
+#    reverse_reads = {}
+#    num_paired_readsets = 0
+#    num_single_readsets = 0
+#    for infile in glob.glob(os.path.join(dir_path, "*.fastq.gz")):
+#        (file_path,file_name_before_ext,full_ext) = get_readFile_components(infile)
+#        m=re.match("(.*)(_S.*)(_L.*)(_R.*)(_.*)", file_name_before_ext)
+#        if m==None:
+#            m=re.match("(.*)("+"_R1"+")(_.*)$",file_name_before_ext)
+#            if m!=None:
+#                (baseName,read) = m.groups()[0], m.groups()[1]
+#                forward_reads[baseName] = infile
+#            else:
+#                m=re.match("(.*)("+"_R2"+")(_.*)$",file_name_before_ext)
+#                if m!=None:
+#                    (baseName,read) = m.groups()[0], m.groups()[1]
+#                    reverse_reads[baseName] = infile
+#                else:
+#                    print("#Could not determine forward/reverse read status for input file")
+#        else:
+#            baseName, read  = m.groups()[0], m.groups()[3]
+#            if read == "_R1":
+#                forward_reads[baseName] = infile
+#            elif read == "_R2":
+#                reverse_reads[baseName] = infile
+#            else:
+#                print("#Could not determine forward/reverse read status for input file ")
+#                fileSets[file_name_before_ext] = infile
+##    for sample in forward_reads:
+#        if sample in reverse_reads:
+#            fileSets[sample] = [forward_reads[sample],reverse_reads[sample]] # store pair
+#            num_paired_readsets += 1
+#        else:
+#            fileSets[sample] = [forward_reads[sample]] # no reverse found
+#            num_single_readsets += 1
+#            logging.info('#Warning, could not find pair for read:' + forward_reads[sample])
+#    for sample in reverse_reads:
+#        if sample not in fileSets:
+#            fileSets[sample] = reverse_reads[sample] # no forward found
+#            num_single_readsets += 1
+#            logging.info('#Warning, could not find pair for read:' + reverse_reads[sample])
+#    if num_paired_readsets > 0:
+#        logging.info('Total paired readsets found:' + str(num_paired_readsets))
+#    if num_single_readsets > 0:
+#        logging.info('Total single reads found:' + str(num_single_readsets))
+#    return fileSets
 
 def get_seq_name(in_fasta):
     """used for renaming the sequences"""

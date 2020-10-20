@@ -34,15 +34,27 @@ def parse_config_file(config_file):
                 pass
             else:
                 fields = line.split()
-                """fields[13] is the assembler option"""
-                datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10],fields[11],fields[12],fields[13],fields[14]),)+datasets
+                #This indicates paired end data
+                if len(fields) == 15:
+                    """fields[13] is the assembler option"""
+                    datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10],fields[11],fields[12],fields[13],fields[14]),)+datasets
+                #This indicates single end data
+                elif len(fields) == 14:
+                    datasets=((fields[0],fields[1],fields[2],fields[3],fields[4],fields[5],fields[6],fields[7],fields[8],fields[9],fields[10],fields[11],fields[12],fields[13]),)+datasets
     return datasets
 
 def send_jobs(datasets,my_mem,controller,time):
     for data in datasets:
         job_name = "UGAP_%s" % data[0]
         walltime = "%s:00:00" % time
-        command = "python %s/ugap_single.py -c %s -a %s -n %s -f %s -v %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s -j %s" % (data[9],data[14],data[13],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12])
+        #Paired end support
+        if len(data) == 15:
+            command = "python %s/ugap_single.py -c %s -a %s -n %s -f %s -v %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s -j %s" % (data[9],data[14],data[13],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12])
+            print(command)
+        elif len(data) == 14:
+            #command = "python %s/ugap_single.py -c %s -a %s -n %s -f %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s -j %s" % (data[9],data[14],data[13],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12])
+            command = "python %s/ugap_single.py -n %s -f %s -e %s -k %s -t %s -b %s -p %s -x %s -z %s -r %s -o %s -j %s -a %s -c %s" % (data[8],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13])
+            print(command)
         if controller == "slurm":
             memory = "mem=%s" % my_mem
             job_string = "--job-name %s -c %s --time %s --mem %s --wrap" % (job_name,data[7],walltime,my_mem)
@@ -52,9 +64,8 @@ def send_jobs(datasets,my_mem,controller,time):
 #SBATCH  --mem=%s
 #%s""" % (job_name,data[7],walltime,my_mem,command)
 
-            #input.write(job_string)
-            #input.close()
-
+#            input.write(job_string)
+#            input.close()
             print('sbatch %s "%s"' % (job_string,command))
             os.system('sbatch %s "%s"' % (job_string,command))
 

@@ -138,7 +138,7 @@ if __name__ == "__main__":
                       action="callback", callback=test_file, type="string")
     parser.add_option("-e", "--error", dest="error_corrector",
                       help="error corrector, choose from musket,hammer, or none, defaults to hammer",
-                      action="callback", callback=test_options, type="string", default="hammer")
+                      action="callback", callback=test_options, type="string", default="none")
     parser.add_option("-k", "--keep", dest="keep",
                       help="minimum length of contigs to keep, defaults to 500",
                       default="500", type="int")
@@ -170,7 +170,7 @@ if __name__ == "__main__":
                       help="adapter trimmer, choose from trimmomatic or bbduk[default]",
                       action="store", type="string", default="T")
     options, args = parser.parse_args()
-    mandatories = ["forward_read","name","reverse_read","ugap_path"]
+    mandatories = ["forward_read","name","ugap_path"]
     for m in mandatories:
         if not options.__dict__[m]:
             print("\nMust provide %s.\n" %m)
