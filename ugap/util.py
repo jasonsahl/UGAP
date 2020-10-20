@@ -501,7 +501,7 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             try:
                 subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
             except:
-                subprocess.check_call("gunzip %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
+                subprocess.check_call("gunzip %s.F.paired.fastq.gz > /dev/null 2>&1" % name, shell=True)
             if sample_type == "PE":
                 cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-reverse","%s.R.paired.fastq" % name,"-output","%s.F.tmp.fastq" % name,
                       "-output2","%s.R.tmp.fastq" % name]
