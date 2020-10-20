@@ -57,7 +57,10 @@ def send_jobs(datasets,my_mem,controller,time):
             print(command)
         if controller == "slurm":
             memory = "mem=%s" % my_mem
-            job_string = "--job-name %s -c %s --time %s --mem %s --wrap" % (job_name,data[7],walltime,my_mem)
+            if len(data) == 16:
+                job_string = "--job-name %s -c %s --time %s --mem %s --wrap" % (job_name,data[7],walltime,my_mem)
+            elif len(data) == 15:
+                job_string = "--job-name %s -c %s --time %s --mem %s --wrap" % (job_name,data[6],walltime,my_mem)
 #SBATCH -J %s
 #SBATCH -c %s
 #SBATCH --time %s
