@@ -449,8 +449,10 @@ def run_sendsketch(fasta_in,name):
             os.system("rm tmp.file.fasta %s.sendsketch.out" % record.id)
     outfile.close()
 
-def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,phiX_filter):
+def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,
+    TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,phiX_filter,sample_type):
     """This should, in theory, get rid of phiX if it is present, assuming it's not in the reference"""
+    #TODO: add in sample_type
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
         rv = subprocess.call(['which', 'bam2fastq'])
@@ -474,8 +476,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         ks = "21,33,55,77,99,127"
     elif int(get_sequence_length_dev(forward_path))<100:
         ks = "21,33"
-    else:
-        pass
     #Gets the sequence length independently for each genomes
     length = (int(get_sequence_length_dev(forward_path)/2))
     #Sub-sample reads to 4 million in each direction: at some point this will become a tunable parameter
@@ -483,27 +483,40 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     if os.path.isfile("%s.F.tmp.fastq.gz" % name):
         pass
     else:
-        subsample_reads_dev(forward_path, "%s.F.tmp.fastq.gz" % name)
-        subsample_reads_dev(reverse_path, "%s.R.tmp.fastq.gz" % name)
+        if sample_type == "PE":
+            subsample_reads_dev(forward_path, "%s.F.tmp.fastq.gz" % name)
+            subsample_reads_dev(reverse_path, "%s.R.tmp.fastq.gz" % name)
+        else:
+            subsample_reads_dev(forward_path, "%s.F.tmp.fastq.gz" % name)
     #If trimmomatic has already been run, don't run again, trimmomatic requires PAIRED reads
     #Checkpoint 2: trimmomatic, usearch
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
     else:
-        subprocess.check_call("bbduk.sh in=%s.F.tmp.fastq.gz in2=%s.R.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz out2=%s.R.paired.fastq.gz minlen=%s overwrite=true" % (name,name,UGAP_PATH,name,name,length), shell=True)
+        if sample_type == "PE":
+            subprocess.check_call("bbduk.sh in=%s.F.tmp.fastq.gz in2=%s.R.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz out2=%s.R.paired.fastq.gz minlen=%s overwrite=true" % (name,name,UGAP_PATH,name,name,length), shell=True)
+        elif sample_type == "SE":
+            subprocess.check_call("bbduk.sh in=%s.F.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gzminlen=%s overwrite=true" % (name,UGAP_PATH,name,length), shell=True)
         if phiX_filter == "T":
             try:
                 subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
             except:
-                pass
-            cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-reverse","%s.R.paired.fastq" % name,"-output","%s.F.tmp.fastq" % name,
-                  "-output2","%s.R.tmp.fastq" % name]
+                subprocess.check_call("gunzip %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
+            if sample_type == "PE":
+                cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-reverse","%s.R.paired.fastq" % name,"-output","%s.F.tmp.fastq" % name,
+                      "-output2","%s.R.tmp.fastq" % name]
+            elif sample_type == "SE":
+                cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-output","%s.F.tmp.fastq" % name]
             try:
                 devnull = open("/dev/null", "w")
                 subprocess.call(cmd, stderr=devnull, stdout=devnull)
-                os.system("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name))
-                os.system("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name))
-                os.system("pigz *.paired.fastq")
+                try:
+                    os.system("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name))
+                    os.system("mv %s.R.tmp.fastq %s.R.paired.fastq" % (name,name))
+                    os.system("pigz *.paired.fastq")
+                except:
+                    os.system("mv %s.F.tmp.fastq %s.F.paired.fastq" % (name,name))
+                    os.system("pigz *.paired.fastq")
             except:
                 print("usearch9 required for phiX filtering...exiting")
                 sys.exit()
@@ -517,9 +530,16 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         if error_corrector=="hammer":
             if assembler=="spades":
                 if careful == "T":
-                    subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                    if sample_type == "PE":
+                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                    elif sample_type == "SE":
+                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), shell=True)
                 else:
-                    subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                    if sample_type == "PE":
+                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                    else:
+                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), shell=True)
+            #TODO: add SE support for skesa
             elif assembler=="skesa":
                 subprocess.check_call("spades.py --only-error-correction -o %s.spades -t %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
                 """This workflow needs to be tested"""
@@ -527,11 +547,17 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         else:
             if assembler=="spades":
                 if careful == "T":
-                    subprocess.check_call("spades.py --only-assembler --careful -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                    if sample_type == "PE":
+                        subprocess.check_call("spades.py --only-assembler --careful -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                    elif sample_type == "SE":
+                        subprocess.check_call("spades.py --only-assembler --careful -o %s.spades -t %s -k %s --cov-cutoff %s -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), shell=True)
                 else:
-                    subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-
+                    if sample_type == "PE":
+                        subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                    elif sample_type == "SE":
+                        subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), shell=True)
             else:
+                #TODO: add SE support for skesa
                 subprocess.check_call("skesa --gz --fastq %s.F.paired.fastq.gz,%s.R.paired.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,processors,name), shell=True)
     """need to rename stuff here, copying over the Skesa files if they exist"""
     if assembler=="spades":
@@ -550,10 +576,14 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     #os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
     try:
         if "NULL" not in reduce:
-            subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s_1.fastq.gz %s_2.fastq.gz | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,name,name,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+            if sample_type == "PE":
+                subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s_1.fastq.gz %s_2.fastq.gz | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,name,name,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+            elif sample_type == "SE":
+                subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s_1.fastq.gz | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,name,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
             os.system("samtools index %s_renamed.bam" % name)
         else:
             #align depleted reads if the reduced option is selected. This section is currently being tested
+            #TODO: add support here
             print("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,reverse_path,name))
             subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,reverse_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
             os.system("samtools index %s_renamed.bam" % name)
@@ -596,9 +626,15 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     #I need to check the number of contigs, then decide whether or not to run bwa again
     subprocess.check_call("bwa index %s.%s.spades.assembly.fasta" % (name,keep),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     if "NULL" not in reduce:
-        subprocess.check_call("bwa mem -v 2 -M -t 4 %s.%s.spades.assembly.fasta %s_1.fastq.gz %s_2.fastq.gz | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,keep,name,name,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+        if sample_type == "PE":
+            subprocess.check_call("bwa mem -v 2 -M -t 4 %s.%s.spades.assembly.fasta %s_1.fastq.gz %s_2.fastq.gz | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,keep,name,name,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+        elif sample_type == "SE":
+            subprocess.check_call("bwa mem -v 2 -M -t 4 %s.%s.spades.assembly.fasta %s_1.fastq.gz | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,keep,name,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     else:
-        subprocess.check_call("bwa mem -v 2 -M -t 4 %s.%s.spades.assembly.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,keep,forward_path,reverse_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+        if sample_type == "PE":
+            subprocess.check_call("bwa mem -v 2 -M -t 4 %s.%s.spades.assembly.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,keep,forward_path,reverse_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+        elif sample_type == "SE":
+            subprocess.check_call("bwa mem -v 2 -M -t 4 %s.%s.spades.assembly.fasta %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,keep,forward_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     #This is for the per contig coverage routine. This can likely be replaced
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep), name)
     subprocess.check_call("tr ' ' '\t' < %s.tmp.txt > %s.genome_size.txt" % (name, name), shell=True)
