@@ -499,9 +499,12 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             subprocess.check_call("bbduk.sh in=%s.F.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz minlen=%s overwrite=true" % (name,UGAP_PATH,name,length), shell=True)
         if phiX_filter == "T":
             try:
-                subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
+                if sample_type == "PE":
+                    subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
+                elif sample_type == "SE":
+                    subprocess.check_call("gunzip %s.F.paired.fastq.gz > /dev/null 2>&1" % name, shell=True)
             except:
-                subprocess.check_call("gunzip %s.F.paired.fastq.gz > /dev/null 2>&1" % name, shell=True)
+                pass
             if sample_type == "PE":
                 cmd = ["usearch","-filter_phix","%s.F.paired.fastq" % name,"-reverse","%s.R.paired.fastq" % name,"-output","%s.F.tmp.fastq" % name,
                       "-output2","%s.R.tmp.fastq" % name]
