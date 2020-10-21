@@ -540,7 +540,7 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
                 else:
                     if sample_type == "PE":
                         subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
-                    else:
+                    elif sample_type == "SE":
                         subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), shell=True)
             #TODO: add SE support for skesa
             elif assembler=="skesa":
@@ -587,8 +587,11 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         else:
             #align depleted reads if the reduced option is selected. This section is currently being tested
             #TODO: add support here
-            print("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,reverse_path,name))
-            subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,reverse_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+            if sample_type == "PE":
+                #print("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,reverse_path,name))
+                subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,reverse_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+            elif sample_type == "SE":
+                subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
             os.system("samtools index %s_renamed.bam" % name)
     except:
         print("problems running bwa")
