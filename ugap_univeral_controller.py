@@ -53,7 +53,7 @@ def send_jobs(datasets,my_mem,controller,time):
             print(command)
         elif len(data) == 15:
             #command = "python %s/ugap_single.py -c %s -a %s -n %s -f %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s -j %s" % (data[9],data[14],data[13],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12])
-            command = "python %s/ugap_single.py -n %s -f %s -e %s -k %s -t %s -b %s -p %s -x %s -z %s -r %s -o %s -j %s -a %s -c %s -d %s" % (data[8],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14])
+            command = "python %s/ugap_single.py -n %s -f %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s -j %s -a %s -c %s -d %s" % (data[8],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14])
             print(command)
         if controller == "slurm":
             memory = "mem=%s" % my_mem
