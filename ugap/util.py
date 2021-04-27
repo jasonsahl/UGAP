@@ -336,7 +336,8 @@ def read_file_sets(dir_path):
                     (baseName,read) = m.groups()[0], m.groups()[1]
                     reverse_reads[baseName] = infile
                 else:
-                    print("#Could not determine forward/reverse read status for input file")
+                    pass
+                    #print("#Could not determine forward/reverse read status for input file")
         else:
             baseName, read  = m.groups()[0], m.groups()[3]
             if read == "_R1":
@@ -344,7 +345,7 @@ def read_file_sets(dir_path):
             elif read == "_R2":
                 reverse_reads[baseName] = infile
             else:
-                print("#Could not determine forward/reverse read status for input file ")
+                #print("#Could not determine forward/reverse read status for input file ")
                 fileSets[file_name_before_ext] = infile
                 num_single_readsets += 1
     for sample in forward_reads:
