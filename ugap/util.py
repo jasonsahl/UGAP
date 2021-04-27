@@ -262,6 +262,60 @@ def get_readFile_components(full_file_path):
     full_ext = ext2+ext
     return(file_path,file_name_before_ext,full_ext)
 
+#def read_file_sets(dir_path):
+#    """match up pairs of sequence data, adapted from
+#    https://github.com/katholt/srst2 will be tough to test
+#    with variable names and read paths"""
+#    fileSets = {}
+#    forward_reads = {}
+#    reverse_reads = {}
+#    num_paired_readsets = 0
+#    num_single_readsets = 0
+#    for infile in glob.glob(os.path.join(dir_path, "*.fastq.gz")):
+#        (file_path,file_name_before_ext,full_ext) = get_readFile_components(infile)
+#        m=re.match("(_R*)", file_name_before_ext)
+#        if m is None:
+#            #m=re.match("(.*)("+"_R1"+")(_.*)$",file_name_before_ext)
+#            m=re.match("(.*)("+"_R1"+")(.*)$",file_name_before_ext)
+#            if m is not None:
+#                (baseName,read) = m.groups()[0], m.groups()[1]
+#                forward_reads[baseName] = infile
+#            else:
+                #m=re.match("(.*)("+"_R2"+")(_.*)$",file_name_before_ext)
+#                m=re.match("(.*)("+"_R2"+")(.*)$",file_name_before_ext)
+#                if m is not None:
+#                    (baseName,read) = m.groups()[0], m.groups()[1]
+#                    reverse_reads[baseName] = infile
+#                else:
+#                    fileSets[file_name_before_ext] = infile
+#                    num_single_readsets += 1
+                    #print("Could not determine forward/reverse read status for input file %s" % infile)
+#        else:
+#            baseName, read  = m.groups()[0], m.groups()[3]
+#            if read == "_R1":
+#                forward_reads[baseName] = infile
+#            elif read == "_R2":
+#                reverse_reads[baseName] = infile
+#            else:
+                #print("Could not determine forward/reverse read status for input file")
+#                fileSets[file_name_before_ext] = infile
+#                num_single_readsets += 1
+#    for sample in forward_reads:
+#        if sample in reverse_reads:
+#            fileSets[sample] = [forward_reads[sample],reverse_reads[sample]] # store pair
+#            num_paired_readsets += 1
+##            fileSets[sample] = [forward_reads[sample]] # no reverse found
+#            num_single_readsets += 1
+            #logging.info('Warning, could not find pair for read:' + forward_reads[sample])
+#            fileSets[sample] = reverse_reads[sample] # no forward found
+#            num_single_readsets += 1
+            #logging.info('Warning, could not find pair for read:' + reverse_reads[sample])
+    #if num_paired_readsets > 0:
+    #    logging.info('Total paired readsets found:' + str(num_paired_readsets))
+    #if num_single_readsets > 0:
+    #    logging.info('Total single reads found:' + str(num_single_readsets))
+#    return fileSets
+
 def read_file_sets(dir_path):
     fileSets = {}
     forward_reads = {}
@@ -305,55 +359,6 @@ def read_file_sets(dir_path):
             fileSets[sample] = reverse_reads[sample] # no forward found
             num_single_readsets += 1
     return fileSets
-
-#def read_file_sets(dir_path):
-#    fileSets = {}
-#    forward_reads = {}
-#    reverse_reads = {}
-#    num_paired_readsets = 0
-#    num_single_readsets = 0
-#    for infile in glob.glob(os.path.join(dir_path, "*.fastq.gz")):
-#        (file_path,file_name_before_ext,full_ext) = get_readFile_components(infile)
-#        m=re.match("(.*)(_S.*)(_L.*)(_R.*)(_.*)", file_name_before_ext)
-#        if m==None:
-#            m=re.match("(.*)("+"_R1"+")(_.*)$",file_name_before_ext)
-#            if m!=None:
-#                (baseName,read) = m.groups()[0], m.groups()[1]
-#                forward_reads[baseName] = infile
-#            else:
-#                m=re.match("(.*)("+"_R2"+")(_.*)$",file_name_before_ext)
-#                if m!=None:
-#                    (baseName,read) = m.groups()[0], m.groups()[1]
-#                    reverse_reads[baseName] = infile
-#                else:
-#                    print("#Could not determine forward/reverse read status for input file")
-#        else:
-#            baseName, read  = m.groups()[0], m.groups()[3]
-#            if read == "_R1":
-#                forward_reads[baseName] = infile
-#            elif read == "_R2":
-#                reverse_reads[baseName] = infile
-#            else:
-#                print("#Could not determine forward/reverse read status for input file ")
-#                fileSets[file_name_before_ext] = infile
-##    for sample in forward_reads:
-#        if sample in reverse_reads:
-#            fileSets[sample] = [forward_reads[sample],reverse_reads[sample]] # store pair
-#            num_paired_readsets += 1
-#        else:
-#            fileSets[sample] = [forward_reads[sample]] # no reverse found
-#            num_single_readsets += 1
-#            logging.info('#Warning, could not find pair for read:' + forward_reads[sample])
-#    for sample in reverse_reads:
-#        if sample not in fileSets:
-#            fileSets[sample] = reverse_reads[sample] # no forward found
-#            num_single_readsets += 1
-#            logging.info('#Warning, could not find pair for read:' + reverse_reads[sample])
-#    if num_paired_readsets > 0:
-#        logging.info('Total paired readsets found:' + str(num_paired_readsets))
-#    if num_single_readsets > 0:
-#        logging.info('Total single reads found:' + str(num_single_readsets))
-#    return fileSets
 
 def get_seq_name(in_fasta):
     """used for renaming the sequences"""
@@ -451,8 +456,6 @@ def run_sendsketch(fasta_in,name):
 
 def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,
     TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,phiX_filter,sample_type):
-    """This should, in theory, get rid of phiX if it is present, assuming it's not in the reference"""
-    #TODO: add in sample_type
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
         rv = subprocess.call(['which', 'bam2fastq'])
@@ -469,17 +472,19 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         else:
             print("to deplete reads, you need to have bam2fastq installed. Reads will not be depleted")
     """The Ks parameter is obsolete in Spade 3.7+, this will likely be removed in the future"""
-    if int(get_sequence_length_dev(forward_path))<=200 and int(get_sequence_length_dev(forward_path))>=100:
+    #if int(get_sequence_length_dev(forward_path))<=200 and int(get_sequence_length_dev(forward_path))>=100:
         #Uses default K values, based on SPADes recs
-        ks = "21,33,55,77"
-    elif int(get_sequence_length_dev(forward_path))>200:
-        ks = "21,33,55,77,99,127"
-    elif int(get_sequence_length_dev(forward_path))<100:
-        ks = "21,33"
-    #Gets the sequence length independently for each genomes
+        #ks = "21,33,55,77"
+    #elif int(get_sequence_length_dev(forward_path))>200:
+        #ks = "21,33,55,77,99,127"
+    #elif int(get_sequence_length_dev(forward_path))<100:
+        #ks = "21,33"
+    #This is a placeholder for the K value required by spadees
+    ks = "auto"
+    #length is required for the trimming step with bbduk
     length = (int(get_sequence_length_dev(forward_path)/2))
     #Sub-sample reads to 4 million in each direction: at some point this will become a tunable parameter
-    #Checkpoint 1: subsample reads
+    """Checkpoint 1: subsample reads"""
     if os.path.isfile("%s.F.tmp.fastq.gz" % name):
         pass
     else:
@@ -489,7 +494,7 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         else:
             subsample_reads_dev(forward_path, "%s.F.tmp.fastq.gz" % name)
     #If trimmomatic has already been run, don't run again, trimmomatic requires PAIRED reads
-    #Checkpoint 2: trimmomatic, usearch
+    """Checkpoint 2: trimmomatic, usearch"""
     if os.path.isfile("%s.F.paired.fastq.gz" % name):
         pass
     else:

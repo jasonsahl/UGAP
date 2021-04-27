@@ -9,7 +9,6 @@ import sys
 import subprocess
 try:
     from ugap.util import *
-    #from igs.utils import logging as log_isg
 except:
     print("Environment not set correctly, correct ugap_single.py environment")
     sys.exit()
@@ -66,7 +65,7 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic.jar"
     #updated to 1.20 on September 27th, 2016
-    PILON_PATH=UGAP_PATH+"/bin/pilon-1.20.jar"
+    PILON_PATH=UGAP_PATH+"/bin/pilon-1.24.jar"
     if os.path.exists(UGAP_PATH):
         sys.path.append("%s" % UGAP_PATH)
     else:
