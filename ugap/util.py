@@ -120,11 +120,11 @@ def sum_coverage(coverage,cov,name):
 
 def get_coverage_dev(bam, size, name):
     """trying out a variation, reducing the number of dependencies"""
-    subprocess.check_call("samtools depth %s > %s.tmp.out" % (bam,name), shell=True)
+    subprocess.check_call("samtools depth -aa %s > %s.tmp.out" % (bam,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
 
 def remove_column(temp_file, name):
     outfile = open("%s.coverage.out" % name, "w")
-    my_fields = [ ]
+    my_fields = []
     with open(temp_file) as infile:
         for line in infile:
             fields=line.split()
