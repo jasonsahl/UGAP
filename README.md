@@ -1,21 +1,28 @@
 ### Instructions for using UGAP  
 
-#### Dependencies that MUST be installed by the user:  
+#### Dependencies for UGAP include:  
 
-1. SPAdes, must be > version 3.5. Working on v3.7.1.  
-2. genomeCoverageBed (part of BEDTOOLS). Linux version included in /bin folder. If incompatible with your version, you must replace this version with your binary.  
-3. bwa (must have version that supports BWA-MEM algorithm). Tested version is 0.7.7  
-4. Samtools - tested version is 0.1.19  
-5. BioPython  
+1. SPAdes  
+2. bwa (must have version that supports BWA-MEM algorithm).  
+3. Samtools  
+4. BioPython  
+5. blast+ (optional)  
+6. bbmap  
+7. seqtk  
+8. bedtools  
 
-#### Optional dependencies for full functionality  
+### Installing with conda
 
-1. BLAST+ (must have blastn in PATH). This is needed for troubleshooting mixtures  
-2. Musket (only if you want to correct reads with this tool); not thoroughly tested and may not work properly  
+```conda create -n ugap python=3.7```  
+```conda activate ugap```  
+```conda install -c conda-forge mamba```  
+```mamba install -c bioconda spades bwa samtools biopython blast bbmap seqtk bedtools```  
+```mamba install -c anaconda pigz```  
+```git clone https://github.com/jasonsahl/UGAP.git```  
 
 #### To run:
 
-*You need a directory with paired-end reads in *.fastq.gz format. Names need to be similar to what comes off Illumina sequencer (e.g. *R1_001.fastq.gz)  
+*You need a directory with paired-end reads in *.fastq.gz format. Names need to be similar to what comes off Illumina sequencer (e.g. *R1_001.fastq.gz). Single end support has not been thoroughly tested  
 
 *You need to edit the "ugap_prep.py" script to reflect your installation location:  
 
@@ -25,9 +32,9 @@ UGAP_PATH="/Users/jasonsahl/tools/UGAP"
 
 *First you will need to generate a UGAP input file. You can do this like:  
 
-python ugap_prep.py -d reads -b /scratch/blastdb/nt -p 4 > ugap.config  
+```python ugap_prep.py -d reads -b /scratch/blastdb/nt -p 4 > ugap.config```  
 
-*If you don't give a path to a BLAST database, it will ignore this functionality.  
+*If you don't give a path to a BLAST database, it will ignore this functionality and run the "sendsketch" method in bbmap instead  
 
 *Inspect the config file to make sure that you see commands that will be fed to UGAP  
 
