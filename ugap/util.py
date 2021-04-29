@@ -648,8 +648,8 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     report_stats("%s.results.txt" % name, "%s_renamed_header.bam" % name, name)
     """The 3 suffix here is totally arbitrary and should be changed"""
     doc("%s.coverage.out" % name, "%s.genome_size.txt" % name, name, 3)
-    os.system("cp %s_3_depth.txt %s/UGAP_assembly_results" % (name,start_path))
-    sum_totals("%s_3_depth.txt" % name, name, "%s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
+    os.system("cp %s_depth.txt %s/UGAP_assembly_results" % (name,start_path))
+    sum_totals("%s_depth.txt" % name, name, "%s/UGAP_assembly_results/%s_coverage.txt" % (start_path,name))
     #End of section that can likely be replaced
     try:
         if "NULL" in blast_nt:
@@ -657,7 +657,7 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
             run_sendsketch("%s.%s.spades.assembly.fasta" % (name,keep),name)
             os.system("cp sendsketch_parsed.txt %s/UGAP_assembly_results/%s_sendsketch.txt" % (start_path,name))
-            merge_sendsketch_with_coverages("sendsketch_parsed.txt","%s_3_depth.txt" % name,lengths,name)
+            merge_sendsketch_with_coverages("sendsketch_parsed.txt","%s_depth.txt" % name,lengths,name)
             os.system("sed 's/ /_/g' %s.depth_sendsketch_merged.txt > %s.tmp.txt" % (name,name))
             os.system("sort -gr -k 5,5 %s.tmp.txt > %s/UGAP_assembly_results/%s.depth_sendsketch_merged.txt" % (name, start_path, name))
         else:
@@ -668,6 +668,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             os.system("sort -u -k 1,1 %s.blast.out > %s.blast.uniques" % (name, name))
             merge_blast_with_coverages("%s.blast.uniques" % name, "%s_3_depth.txt" % name, lengths, name)
             os.system("awk '{print $NF,$0}' %s.depth_blast_merged.txt | sort -nr | cut -f2- -d' ' > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name,start_path,name))
-            find_missing_coverages("%s_3_depth.txt" % name, "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths, name)
+            find_missing_coverages("%s_depth.txt" % name, "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths, name)
     except:
         print("BLAST not run")
