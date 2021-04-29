@@ -641,7 +641,7 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep), name)
     subprocess.check_call("tr ' ' '\t' < %s.tmp.txt > %s.genome_size.txt" % (name, name), shell=True)
     #get_coverage_dev("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
-    subprocess.check_call("samtools depth -aa %s > %s.tmp.out" % (bam,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+    subprocess.check_call("samtools depth -aa %s_renamed.bam > %s.tmp.out" % (name,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     remove_column("%s.tmp.out" % name, name)
     sum_coverage("%s.coverage.out" % name, 3, name)
     merge_files_by_column(0,"%s.genome_size.txt" % name,"%s.amount_covered.txt" % name,"%s.results.txt" % name)
