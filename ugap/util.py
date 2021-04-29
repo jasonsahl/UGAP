@@ -37,9 +37,9 @@ def report_stats(results, bam, name):
             chromosome = fields[0]
             try:
                 amount = (int(fields[2])/int(fields[1]))*100
+                outfile.write(chromosome+"\t"+str(amount)+"\n")
             except:
                 outfile.write(str(chromosome)+"\t"+"0"+"\n")
-                sys.exc_clear()
     outfile.close()
 
 def merge_files_by_column(column, file_1, file_2, out_file):
@@ -47,54 +47,45 @@ def merge_files_by_column(column, file_1, file_2, out_file):
     that line ordering in the files do not match, so we read both files into memory
     and join them"""
     join_map = {}
-    with open(file_1) as my_file:
-        for line in my_file:
-            line.strip()
+    with open(file_1) as my_file1:
+        for line in my_file1:
             row = line.split()
             column_value = row.pop(column)
             join_map[column_value] = row
-    with open(file_2) as my_file_2:
-        for line in my_file_2:
-            line.strip()
+    with open(file_2) as my_file2:
+        for line in open(file_2):
             row = line.split()
             column_value = row.pop(column)
             if column_value in join_map:
                 join_map[column_value].extend(row)
-    fout = open(out_file, 'w')
+    fout = open(out_file,'w')
     for k, v in join_map.items():
         fout.write('\t'.join([k] + v) + '\n')
     fout.close()
 
 def doc(coverage, genome_size, name, suffix):
-    outfile = open("%s_%s_depth.txt" % (name, suffix), "w")
-    all = []
+    outfile = open("%s_depth.txt" % name, "w")
     my_dict = {}
-    with open(coverage) as incov:
-        for line in incov:
-            fields=line.split()
-            fields = map(lambda s: s.strip(), fields)
-            all.append(fields)
-    for x,y in all:
-        if int(y)>int(1):
-           try:
-               my_dict[x].append(y)
-           except KeyError:
-               my_dict[x] = [y]
-    new_dict={}
-    for k,v in my_dict.items():
-        ints = map(int, v)
-        new_dict.update({k:sum(ints)})
+    with open(coverage) as my_cov:
+        for line in my_cov:
+            fields= line.split()
+            fields = list(map(lambda s: s.strip(), fields))
+            if int(fields[1])>1:
+                try:
+                    my_dict[fields[0]].append(int(fields[1]))
+                except KeyError:
+                    my_dict[fields[0]] = [int(fields[1])]
     genome_size_dict = {}
     with open(genome_size) as ingenom:
         for line in ingenom:
             fields = line.split()
             genome_size_dict.update({fields[0]:fields[1]})
-    outfile.write(str(name)+"\n")
-    for k,v in new_dict.items():
-        outfile.write(str(k)+"\t"+str(round(int(v)/int(genome_size_dict.get(k))))+"0"+"\n")
+    outfile.write(name+"\n")
+    for k,v in my_dict.items():
+        outfile.write(str(k)+"\t"+str(round(int(sum(v))/int(genome_size_dict.get(k))))+"\n")
     for y,z in genome_size_dict.items():
-        if y not in new_dict:
-            outfile.write(str(y)+"\t"+"0"+"\n")
+        if y not in my_dict:
+            outfile.write(str(y)+"\t"+"0"+"\t"+"\n")
     outfile.close()
 
 def sum_coverage(coverage,cov,name):
@@ -130,9 +121,8 @@ def remove_column(temp_file, name):
             fields=line.split()
             del fields[1]
             my_fields.append(fields)
-        for x in my_fields:
-            outfile.write("\t".join(x))
-            outfile.write("\n")
+    for x in my_fields:
+        outfile.write("\t".join(x)+"\n")
     outfile.close()
 
 def get_seq_length(ref, name):
@@ -647,10 +637,11 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             subprocess.check_call("bwa mem -v 2 -M -t 4 %s.%s.spades.assembly.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,keep,forward_path,reverse_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
         elif sample_type == "SE":
             subprocess.check_call("bwa mem -v 2 -M -t 4 %s.%s.spades.assembly.fasta %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,keep,forward_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
-    #This is for the per contig coverage routine. This can likely be replaced
+    #This is for the per contig coverage routine.
     get_seq_length("%s.%s.spades.assembly.fasta" % (name,keep), name)
     subprocess.check_call("tr ' ' '\t' < %s.tmp.txt > %s.genome_size.txt" % (name, name), shell=True)
-    get_coverage_dev("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
+    #get_coverage_dev("%s_renamed.bam" % name,"%s.genome_size.txt" % name, name)
+    subprocess.check_call("samtools depth -aa %s > %s.tmp.out" % (bam,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     remove_column("%s.tmp.out" % name, name)
     sum_coverage("%s.coverage.out" % name, 3, name)
     merge_files_by_column(0,"%s.genome_size.txt" % name,"%s.amount_covered.txt" % name,"%s.results.txt" % name)
