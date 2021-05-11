@@ -666,7 +666,7 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             subprocess.check_call("blastn -task blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out %s.blast.out" % (name, blast_nt, processors, name), shell=True)
             os.system("cp %s.blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (name, start_path, name))
             os.system("sort -u -k 1,1 %s.blast.out > %s.blast.uniques" % (name, name))
-            merge_blast_with_coverages("%s.blast.uniques" % name, "%s_3_depth.txt" % name, lengths, name)
+            merge_blast_with_coverages("%s.blast.uniques" % name, "%s_depth.txt" % name, lengths, name)
             os.system("awk '{print $NF,$0}' %s.depth_blast_merged.txt | sort -nr | cut -f2- -d' ' > %s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (name,start_path,name))
             find_missing_coverages("%s_depth.txt" % name, "%s/UGAP_assembly_results/%s_blast_depth_merged.txt" % (start_path, name), lengths, name)
     except:
