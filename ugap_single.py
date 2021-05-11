@@ -79,7 +79,10 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
     if os.path.exists('%s/UGAP_assembly_results' % start_path):
         pass
     else:
-        os.makedirs('%s/UGAP_assembly_results' % start_path)
+        try:
+            os.makedirs('%s/UGAP_assembly_results' % start_path)
+        except:
+            pass
     if os.path.exists('%s/%s.work_directory' % (start_path,name)):
         pass
     else:
