@@ -491,10 +491,10 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     else:
         if sample_type == "PE":
             #subprocess.check_call("bbduk.sh in=%s.F.tmp.fastq.gz in2=%s.R.tmp.fastq.gz ref=%s/bin/univec.fasta out=%s.F.paired.fastq.gz out2=%s.R.paired.fastq.gz minlen=%s overwrite=true" % (name,name,UGAP_PATH,name,name,length), shell=True)
-            subprocess.check_call("bbduk.sh k=13 in=%s.F.tmp.fastq.gz in2=%s.R.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz out2=%s.R.paired.fastq.gz minlen=%s overwrite=true" % (name,name,UGAP_PATH,name,name,length), shell=True)
+            subprocess.check_call("bbduk.sh k=17 in=%s.F.tmp.fastq.gz in2=%s.R.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz out2=%s.R.paired.fastq.gz minlen=%s overwrite=true" % (name,name,UGAP_PATH,name,name,length), shell=True)
         elif sample_type == "SE":
             #subprocess.check_call("bbduk.sh in=%s.F.tmp.fastq.gz ref=%s/bin/univec.fasta out=%s.F.paired.fastq.gz minlen=%s overwrite=true" % (name,UGAP_PATH,name,length), shell=True)
-            subprocess.check_call("bbduk.sh k=13 in=%s.F.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz minlen=%s overwrite=true" % (name,UGAP_PATH,name,length), shell=True)
+            subprocess.check_call("bbduk.sh k=17 in=%s.F.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz minlen=%s overwrite=true" % (name,UGAP_PATH,name,length), shell=True)
         if phiX_filter == "T":
             try:
                 if sample_type == "PE":
