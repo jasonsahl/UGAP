@@ -446,7 +446,7 @@ def run_sendsketch(fasta_in,name):
     outfile.close()
 
 def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,
-    TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,phiX_filter,sample_type):
+    TRIM_PATH,PICARD_PATH,blast_nt,cov_cutoff,phiX_filter,sample_type):
     if "NULL" not in reduce:
         #Reads will be depleted in relation to a given reference
         rv = subprocess.call(['which', 'bam2fastq'])

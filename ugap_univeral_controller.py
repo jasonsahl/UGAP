@@ -49,26 +49,19 @@ def send_jobs(datasets,my_mem,controller,time):
         walltime = "%s:00:00" % time
         #Paired end support
         if len(data) == 16:
+            #This is PE data
             command = "python %s/ugap_single.py -c %s -a %s -n %s -f %s -v %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s -j %s -d %s" % (data[9],data[14],data[13],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[15])
-            print(command)
+            #print(command)
         elif len(data) == 15:
-            #command = "python %s/ugap_single.py -c %s -a %s -n %s -f %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s -j %s" % (data[9],data[14],data[13],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12])
+            #This is SE data
             command = "python %s/ugap_single.py -n %s -f %s -e %s -k %s -t %s -r %s -p %s -x %s -z %s -b %s -o %s -j %s -a %s -c %s -d %s" % (data[8],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14])
-            print(command)
+            #print(command)
         if controller == "slurm":
             memory = "mem=%s" % my_mem
             if len(data) == 16:
                 job_string = "--job-name %s -c %s --time %s --mem %s --wrap" % (job_name,data[7],walltime,my_mem)
             elif len(data) == 15:
                 job_string = "--job-name %s -c %s --time %s --mem %s --wrap" % (job_name,data[6],walltime,my_mem)
-#SBATCH -J %s
-#SBATCH -c %s
-#SBATCH --time %s
-#SBATCH  --mem=%s
-#%s""" % (job_name,data[7],walltime,my_mem,command)
-
-#            input.write(job_string)
-#            input.close()
             print('sbatch %s "%s"' % (job_string,command))
             os.system('sbatch %s "%s"' % (job_string,command))
 
