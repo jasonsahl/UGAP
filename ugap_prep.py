@@ -56,7 +56,7 @@ def main(assembler,directory,error_corrector,keep,temp_files,reduce,processors,c
     fileSets=read_file_sets("%s" % dir_path)
     reduce_path = os.path.abspath("%s" % reduce)
     #TODO:Need to change the default aligner to minimap
-    dependencies = ['bwa','samtools','seqtk']
+    dependencies = ['bwa','samtools','seqtk','polypolish']
     if phiX_filter == "T":
         dependencies.append("usearch")
     if assembler == "spades":
@@ -117,7 +117,7 @@ if __name__ == "__main__":
                       help="filter for PhiX? Defaults to T, choose from T or F",
                       action="callback", callback=test_truths, type="string", default="T")
     parser.add_option("-c", "--adapter_trimmer", dest="adapter_trimmer",
-                      help="which trimmer to use, trimmomatic or bbduk [default]",
+                      help="which trimmer to use: trimmomatic or bbduk [default]",
                       action="store", type="string", default="bbduk")
     options, args = parser.parse_args()
 

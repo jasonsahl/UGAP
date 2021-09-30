@@ -65,7 +65,7 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
     PICARD_PATH=UGAP_PATH+"/bin/"
     TRIM_PATH=UGAP_PATH+"/bin/trimmomatic.jar"
     #updated to 1.20 on September 27th, 2016
-    PILON_PATH=UGAP_PATH+"/bin/pilon-1.24.jar"
+    #PILON_PATH=UGAP_PATH+"/bin/pilon-1.24.jar"
     if os.path.exists(UGAP_PATH):
         sys.path.append("%s" % UGAP_PATH)
     else:
@@ -112,14 +112,14 @@ def main(forward_read,name,reverse_read,error_corrector,keep,temp_files,reduce,p
     #This is where I really need to focus
     if "NULL" not in reduce:
         if "NULL" not in blast_nt:
-            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX,sample_type)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,blast_nt_path,cov_cutoff,filter_phiX,sample_type)
         else:
-            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX,sample_type)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce_path,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,blast_nt,cov_cutoff,filter_phiX,sample_type)
     else:
         if "NULL" not in blast_nt:
-            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt_path,cov_cutoff,filter_phiX,sample_type)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,blast_nt_path,cov_cutoff,filter_phiX,sample_type)
         else:
-            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,PILON_PATH,blast_nt,cov_cutoff,filter_phiX,sample_type)
+            run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,processors,keep,start_path,reduce,careful,UGAP_PATH,TRIM_PATH,PICARD_PATH,blast_nt,cov_cutoff,filter_phiX,sample_type)
     os.chdir("%s" % start_path)
     if temp_files == "F":
         os.system("rm -rf %s.work_directory" % name)

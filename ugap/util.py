@@ -462,14 +462,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             subsample_reads_dev("%s_2.fastq.gz" % name, "%s.R.tmp.fastq.gz" % name)
         else:
             print("to deplete reads, you need to have bam2fastq installed. Reads will not be depleted")
-    """The Ks parameter is obsolete in Spade 3.7+, this will likely be removed in the future"""
-    #if int(get_sequence_length_dev(forward_path))<=200 and int(get_sequence_length_dev(forward_path))>=100:
-        #Uses default K values, based on SPADes recs
-        #ks = "21,33,55,77"
-    #elif int(get_sequence_length_dev(forward_path))>200:
-        #ks = "21,33,55,77,99,127"
-    #elif int(get_sequence_length_dev(forward_path))<100:
-        #ks = "21,33"
     #This is a placeholder for the K value required by spadees
     ks = "auto"
     #length is required for the trimming step with bbduk
@@ -584,24 +576,23 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             os.system("samtools index %s_renamed.bam" % name)
         else:
             #align depleted reads if the reduced option is selected. This section is currently being tested
-            #TODO: add support here
             if sample_type == "PE":
                 #print("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,reverse_path,name))
-                subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,reverse_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+                subprocess.check_call("bwa mem -t 4 -a %s_renamed.fasta %s > align_1.sam" % (name,forward_path),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+                subprocess.check_call("bwa mem -t 4 -a %s_renamed.fasta %s > align_2.sam" % (name,reverse_path),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
             elif sample_type == "SE":
-                subprocess.check_call("bwa mem -v 2 -M -t 4 %s_renamed.fasta %s | samtools sort -l 0 -@ 4 - | samtools view -Su -o %s_renamed.bam -" % (name,forward_path,name),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
-            os.system("samtools index %s_renamed.bam" % name)
+                subprocess.check_call("bwa mem -t 4 -a %s_renamed.fasta %s > align_1.sam" % (name,forward_path),stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
+            #os.system("samtools index %s_renamed.bam" % name)
     except:
         print("problems running bwa")
         sys.exit()
-    print("running Pilon")
-    try:
-        os.system("java -jar %s --threads %s --fix all,amb --genome %s_renamed.fasta --bam %s_renamed.bam --output %s_pilon > /dev/null 2>&1" % (PILON_PATH,processors,name,name,name))
-    except:
-        print("problem running Pilon. Exiting....")
-        #instead of exiting here, I could just change the name and keep going
-        sys.exit()
-    rename_multifasta("%s_pilon.fasta" % name,name,"%s_final_assembly.fasta" % name)
+    #print("running Pilon")
+    print("running polypolish")
+    if sample_type == "PE":
+        os.system("polypolish %s_renamed.fasta align_1.sam align_2.sam > %s.polypolish.fasta" % (name,name))
+    elif sample_tmpe == "SE":
+        os.system("polypolish %s_renamed.fasta align_1.sam > %s.polypolish.fasta" % (name,name))
+    rename_multifasta("%s_polypolish.fasta" % name,name,"%s_final_assembly.fasta" % name)
     filter_seqs("%s_final_assembly.fasta" % name,keep,name)
     #filters again by minimum length, output is named %s.%s.spades.assembly.fasta
     try:
