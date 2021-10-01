@@ -592,7 +592,7 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         os.system("polypolish %s_renamed.fasta align_1.sam align_2.sam > %s.polypolish.fasta" % (name,name))
     elif sample_tmpe == "SE":
         os.system("polypolish %s_renamed.fasta align_1.sam > %s.polypolish.fasta" % (name,name))
-    rename_multifasta("%s_polypolish.fasta" % name,name,"%s_final_assembly.fasta" % name)
+    rename_multifasta("%s.polypolish.fasta" % name,name,"%s_final_assembly.fasta" % name)
     filter_seqs("%s_final_assembly.fasta" % name,keep,name)
     #filters again by minimum length, output is named %s.%s.spades.assembly.fasta
     try:
