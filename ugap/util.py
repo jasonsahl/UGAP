@@ -252,60 +252,6 @@ def get_readFile_components(full_file_path):
     full_ext = ext2+ext
     return(file_path,file_name_before_ext,full_ext)
 
-#def read_file_sets(dir_path):
-#    """match up pairs of sequence data, adapted from
-#    https://github.com/katholt/srst2 will be tough to test
-#    with variable names and read paths"""
-#    fileSets = {}
-#    forward_reads = {}
-#    reverse_reads = {}
-#    num_paired_readsets = 0
-#    num_single_readsets = 0
-#    for infile in glob.glob(os.path.join(dir_path, "*.fastq.gz")):
-#        (file_path,file_name_before_ext,full_ext) = get_readFile_components(infile)
-#        m=re.match("(_R*)", file_name_before_ext)
-#        if m is None:
-#            #m=re.match("(.*)("+"_R1"+")(_.*)$",file_name_before_ext)
-#            m=re.match("(.*)("+"_R1"+")(.*)$",file_name_before_ext)
-#            if m is not None:
-#                (baseName,read) = m.groups()[0], m.groups()[1]
-#                forward_reads[baseName] = infile
-#            else:
-                #m=re.match("(.*)("+"_R2"+")(_.*)$",file_name_before_ext)
-#                m=re.match("(.*)("+"_R2"+")(.*)$",file_name_before_ext)
-#                if m is not None:
-#                    (baseName,read) = m.groups()[0], m.groups()[1]
-#                    reverse_reads[baseName] = infile
-#                else:
-#                    fileSets[file_name_before_ext] = infile
-#                    num_single_readsets += 1
-                    #print("Could not determine forward/reverse read status for input file %s" % infile)
-#        else:
-#            baseName, read  = m.groups()[0], m.groups()[3]
-#            if read == "_R1":
-#                forward_reads[baseName] = infile
-#            elif read == "_R2":
-#                reverse_reads[baseName] = infile
-#            else:
-                #print("Could not determine forward/reverse read status for input file")
-#                fileSets[file_name_before_ext] = infile
-#                num_single_readsets += 1
-#    for sample in forward_reads:
-#        if sample in reverse_reads:
-#            fileSets[sample] = [forward_reads[sample],reverse_reads[sample]] # store pair
-#            num_paired_readsets += 1
-##            fileSets[sample] = [forward_reads[sample]] # no reverse found
-#            num_single_readsets += 1
-            #logging.info('Warning, could not find pair for read:' + forward_reads[sample])
-#            fileSets[sample] = reverse_reads[sample] # no forward found
-#            num_single_readsets += 1
-            #logging.info('Warning, could not find pair for read:' + reverse_reads[sample])
-    #if num_paired_readsets > 0:
-    #    logging.info('Total paired readsets found:' + str(num_paired_readsets))
-    #if num_single_readsets > 0:
-    #    logging.info('Total single reads found:' + str(num_single_readsets))
-#    return fileSets
-
 def read_file_sets(dir_path):
     fileSets = {}
     forward_reads = {}
@@ -327,7 +273,6 @@ def read_file_sets(dir_path):
                     reverse_reads[baseName] = infile
                 else:
                     pass
-                    #print("#Could not determine forward/reverse read status for input file")
         else:
             baseName, read  = m.groups()[0], m.groups()[3]
             if read == "_R1":
@@ -335,7 +280,6 @@ def read_file_sets(dir_path):
             elif read == "_R2":
                 reverse_reads[baseName] = infile
             else:
-                #print("#Could not determine forward/reverse read status for input file ")
                 fileSets[file_name_before_ext] = infile
                 num_single_readsets += 1
     for sample in forward_reads:
@@ -483,16 +427,16 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     else:
         if sample_type == "PE":
             #subprocess.check_call("bbduk.sh in=%s.F.tmp.fastq.gz in2=%s.R.tmp.fastq.gz ref=%s/bin/univec.fasta out=%s.F.paired.fastq.gz out2=%s.R.paired.fastq.gz minlen=%s overwrite=true" % (name,name,UGAP_PATH,name,name,length), shell=True)
-            subprocess.check_call("bbduk.sh k=17 in=%s.F.tmp.fastq.gz in2=%s.R.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz out2=%s.R.paired.fastq.gz minlen=%s overwrite=true" % (name,name,UGAP_PATH,name,name,length), shell=True)
+            subprocess.check_call("bbduk.sh k=17 in=%s.F.tmp.fastq.gz in2=%s.R.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz out2=%s.R.paired.fastq.gz minlen=%s overwrite=true" % (name,name,UGAP_PATH,name,name,length), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
         elif sample_type == "SE":
             #subprocess.check_call("bbduk.sh in=%s.F.tmp.fastq.gz ref=%s/bin/univec.fasta out=%s.F.paired.fastq.gz minlen=%s overwrite=true" % (name,UGAP_PATH,name,length), shell=True)
-            subprocess.check_call("bbduk.sh k=17 in=%s.F.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz minlen=%s overwrite=true" % (name,UGAP_PATH,name,length), shell=True)
+            subprocess.check_call("bbduk.sh k=17 in=%s.F.tmp.fastq.gz ref=%s/bin/illumina_adapters_all.fasta out=%s.F.paired.fastq.gz minlen=%s overwrite=true" % (name,UGAP_PATH,name,length), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
         if phiX_filter == "T":
             try:
                 if sample_type == "PE":
-                    subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), shell=True)
+                    subprocess.check_call("gunzip %s.F.paired.fastq.gz %s.R.paired.fastq.gz > /dev/null 2>&1" % (name,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
                 elif sample_type == "SE":
-                    subprocess.check_call("gunzip %s.F.paired.fastq.gz > /dev/null 2>&1" % name, shell=True)
+                    subprocess.check_call("gunzip %s.F.paired.fastq.gz > /dev/null 2>&1" % name, stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
             except:
                 pass
             if sample_type == "PE":
@@ -524,34 +468,34 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
             if assembler=="spades":
                 if careful == "T":
                     if sample_type == "PE":
-                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
                     elif sample_type == "SE":
-                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), shell=True)
+                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s --careful -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
                 else:
                     if sample_type == "PE":
-                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
                     elif sample_type == "SE":
-                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), shell=True)
+                        subprocess.check_call("spades.py -o %s.spades -t %s -k %s --cov-cutoff %s -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
             #TODO: add SE support for skesa
             elif assembler=="skesa":
-                subprocess.check_call("spades.py --only-error-correction -o %s.spades -t %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), shell=True)
+                subprocess.check_call("spades.py --only-error-correction -o %s.spades -t %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,name,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
                 """This workflow needs to be tested"""
-                subprocess.check_call("skesa --gz --fastq %s.spades/corrected/%s.F.paired.fastq.00.0_0.cor.fastq.gz,%s.spades/corrected/%s.R.paired.fastq.00.0_0.cor.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,name,name,processors,name), shell=True)
+                subprocess.check_call("skesa --gz --fastq %s.spades/corrected/%s.F.paired.fastq.00.0_0.cor.fastq.gz,%s.spades/corrected/%s.R.paired.fastq.00.0_0.cor.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,name,name,processors,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
         else:
             if assembler=="spades":
                 if careful == "T":
                     if sample_type == "PE":
-                        subprocess.check_call("spades.py --only-assembler --careful -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                        subprocess.check_call("spades.py --only-assembler --careful -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
                     elif sample_type == "SE":
-                        subprocess.check_call("spades.py --only-assembler --careful -o %s.spades -t %s -k %s --cov-cutoff %s -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), shell=True)
+                        subprocess.check_call("spades.py --only-assembler --careful -o %s.spades -t %s -k %s --cov-cutoff %s -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
                 else:
                     if sample_type == "PE":
-                        subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), shell=True)
+                        subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -1 %s.F.paired.fastq.gz -2 %s.R.paired.fastq.gz  > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
                     elif sample_type == "SE":
-                        subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), shell=True)
+                        subprocess.check_call("spades.py --only-assembler -o %s.spades -t %s -k %s --cov-cutoff %s -s %s.F.paired.fastq.gz > /dev/null 2>&1" % (name,processors,ks,cov_cutoff,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
             else:
                 #TODO: add SE support for skesa
-                subprocess.check_call("skesa --gz --fastq %s.F.paired.fastq.gz,%s.R.paired.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,processors,name), shell=True)
+                subprocess.check_call("skesa --gz --fastq %s.F.paired.fastq.gz,%s.R.paired.fastq.gz --cores %s --contigs_out %s.skesa.fasta > /dev/null 2>&1" % (name,name,processors,name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     """need to rename stuff here, copying over the Skesa files if they exist"""
     if assembler=="spades":
         os.system("cp %s.spades/contigs.fasta %s.spades.assembly.fasta" % (name,name))
@@ -596,7 +540,7 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     filter_seqs("%s_final_assembly.fasta" % name,keep,name)
     #filters again by minimum length, output is named %s.%s.spades.assembly.fasta
     try:
-        subprocess.check_call("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep), shell=True, stderr=open(os.devnull, "w"))
+        subprocess.check_call("sed -i 's/\\x0//g' %s.%s.spades.assembly.fasta" % (name,keep), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True) 
     except:
         print("problem fixing missing spaces")
     clean_fasta("%s.%s.spades.assembly.fasta" % (name,keep),"%s/UGAP_assembly_results/%s_final_assembly.fasta" % (start_path,name))
@@ -656,7 +600,7 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
         else:
             slice_assembly("%s.%s.spades.assembly.fasta" % (name,keep),int(keep),"%s.chunks.fasta" % name)
             lengths = get_contig_lengths("%s.%s.spades.assembly.fasta" % (name,keep))
-            subprocess.check_call("blastn -task blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out %s.blast.out" % (name, blast_nt, processors, name), shell=True)
+            subprocess.check_call("blastn -task blastn -query %s.chunks.fasta -db %s -outfmt '7 std stitle' -dust no -evalue 0.01 -num_threads %s -out %s.blast.out" % (name, blast_nt, processors, name), stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
             os.system("cp %s.blast.out %s/UGAP_assembly_results/%s_blast_report.txt" % (name, start_path, name))
             os.system("sort -u -k 1,1 %s.blast.out > %s.blast.uniques" % (name, name))
             merge_blast_with_coverages("%s.blast.uniques" % name, "%s_depth.txt" % name, lengths, name)
