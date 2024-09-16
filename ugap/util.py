@@ -510,7 +510,6 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     #Here I align reads to this new assembly: 1st instance of read alignment
     subprocess.check_call("bwa index %s_renamed.fasta" % name,stdout=open(os.devnull, 'wb'),stderr=open(os.devnull, 'wb'),shell=True)
     #Index renamed.fasta for calling variants
-    #os.system("samtools faidx %s_renamed.fasta 2> /dev/null" % name)
     try:
         if "NULL" not in reduce:
             if sample_type == "PE":
@@ -533,9 +532,9 @@ def run_single_loop(assembler,forward_path,reverse_path,name,error_corrector,pro
     #print("running Pilon")
     print("running polypolish")
     if sample_type == "PE":
-        os.system("polypolish %s_renamed.fasta align_1.sam align_2.sam > %s.polypolish.fasta" % (name,name))
+        os.system("polypolish polish %s_renamed.fasta align_1.sam align_2.sam > %s.polypolish.fasta" % (name,name))
     elif sample_type == "SE":
-        os.system("polypolish %s_renamed.fasta align_1.sam > %s.polypolish.fasta" % (name,name))
+        os.system("polypolish polish %s_renamed.fasta align_1.sam > %s.polypolish.fasta" % (name,name))
     rename_multifasta("%s.polypolish.fasta" % name,name,"%s_final_assembly.fasta" % name)
     filter_seqs("%s_final_assembly.fasta" % name,keep,name)
     #filters again by minimum length, output is named %s.%s.spades.assembly.fasta

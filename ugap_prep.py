@@ -51,6 +51,10 @@ def test_assembler(option, opt_str, value, parser):
         print("must select from skesa or spades")
         sys.exit()
 
+def is_tool(name):
+    from distutils.spawn import find_executable
+    return find_executable(name) is not None
+
 def main(assembler,directory,error_corrector,keep,temp_files,reduce,processors,careful,blast_nt,cov_cutoff,phiX_filter,adapter_trimmer):
     dir_path=os.path.abspath("%s" % directory)
     fileSets=read_file_sets("%s" % dir_path)
@@ -68,12 +72,12 @@ def main(assembler,directory,error_corrector,keep,temp_files,reduce,processors,c
     elif adapter_trimmer == "bbduk":
         dependencies.append("bbduk.sh")
     for dependency in dependencies:
-        ra = subprocess.check_call('which %s > /dev/null 2>&1' % dependency, shell=True)
-        if ra == 0:
-            pass
-        else:
-            print("%s is not in your path, but needs to be!" % dependency)
+        result = is_tool(dependency)
+        if result is False:
+            print("%s isn't in your path, but needs to be!" % result)
             sys.exit()
+        else:
+            pass
     for k,v in fileSets.items():
         if len(v) == 2:
             print(k+"\t"+'\t'.join(v)+"\t"+str(error_corrector)+"\t"+str(keep)+"\t"+str(temp_files)+"\t"+str(reduce_path)+"\t"+str(processors)+"\t"+str(careful)+"\t"+str(UGAP_PATH)+"\t"+str(blast_nt)+"\t"+str(cov_cutoff)+"\t"+str(phiX_filter)+"\t"+str(assembler)+"\t"+str(adapter_trimmer)+"\t"+"PE")
